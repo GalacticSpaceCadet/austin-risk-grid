@@ -43,6 +43,8 @@ python run_phase5_1.py
 python run_phase7a.py   # optional metrics shown in the dashboard
 ```
 
+If you haven’t generated outputs yet, the app will start in a **demo mode** (synthetic data) so you can still use the UI immediately.
+
 ## What it produces
 1. A next hour risk map of Austin
 2. A ranked list of staging locations with short reasons
