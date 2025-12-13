@@ -1,0 +1,92 @@
+[
+  {
+    "rank": 1,
+    "cell_id": "6036_-19559",
+    "lat": 30.1825,
+    "lon": -97.7925,
+    "t_bucket": "2025-12-13 09:00:00+00:00",
+    "risk_score": 1.0204081632653061,
+    "reason": "Recent incidents detected in this area"
+  },
+  {
+    "rank": 2,
+    "cell_id": "6048_-19550",
+    "lat": 30.2425,
+    "lon": -97.7475,
+    "t_bucket": "2025-12-13 09:00:00+00:00",
+    "risk_score": 1.0204081632653061,
+    "reason": "Recent incidents detected in this area"
+  },
+  {
+    "rank": 3,
+    "cell_id": "6065_-19546",
+    "lat": 30.3275,
+    "lon": -97.7275,
+    "t_bucket": "2025-12-13 09:00:00+00:00",
+    "risk_score": 1.0204081632653061,
+    "reason": "Recent incidents detected in this area"
+  },
+  {
+    "rank": 4,
+    "cell_id": "6053_-19548",
+    "lat": 30.267500000000002,
+    "lon": -97.7375,
+    "t_bucket": "2025-12-13 09:00:00+00:00",
+    "risk_score": 1.0204081632653061,
+    "reason": "Recent incidents detected in this area"
+  },
+  {
+    "rank": 5,
+    "cell_id": "6037_-19519",
+    "lat": 30.1875,
+    "lon": -97.5925,
+    "t_bucket": "2025-12-13 09:00:00+00:00",
+    "risk_score": 1.0,
+    "reason": "Recent incidents detected in this area"
+  },
+  {
+    "rank": 6,
+    "cell_id": "6094_-19593",
+    "lat": 30.4725,
+    "lon": -97.9625,
+    "t_bucket": "2025-12-13 09:00:00+00:00",
+    "risk_score": 1.0,
+    "reason": "Recent incidents detected in this area"
+  },
+  {
+    "rank": 7,
+    "cell_id": "6038_-19533",
+    "lat": 30.1925,
+    "lon": -97.66250000000001,
+    "t_bucket": "2025-12-13 09:00:00+00:00",
+    "risk_score": 1.0,
+    "reason": "Recent incidents detected in this area"
+  },
+  {
+    "rank": 8,
+    "cell_id": "6081_-19549",
+    "lat": 30.4075,
+    "lon": -97.7425,
+    "t_bucket": "2025-12-13 09:00:00+00:00",
+    "risk_score": 1.0,
+    "reason": "Recent incidents detected in this area"
+  },
+  {
+    "rank": 9,
+    "cell_id": "6053_-19547",
+    "lat": 30.267500000000002,
+    "lon": -97.7325,
+    "t_bucket": "2025-12-13 09:00:00+00:00",
+    "risk_score": 0.10204081632653061,
+    "reason": "Low baseline risk for this location and time"
+  },
+  {
+    "rank": 10,
+    "cell_id": "6052_-19546",
+    "lat": 30.2625,
+    "lon": -97.7275,
+    "t_bucket": "2025-12-13 09:00:00+00:00",
+    "risk_score": 0.061224489795918366,
+    "reason": "Low baseline risk for this location and time"
+  }
+]

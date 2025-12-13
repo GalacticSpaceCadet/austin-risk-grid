@@ -1,0 +1,8 @@
+{
+  "coverage_rate": 0.025359477124183006,
+  "evaluation_window_days": 30,
+  "total_incidents_evaluated": 3825,
+  "covered_incidents": 97,
+  "hours_evaluated": 637,
+  "note": "Coverage rate measures how often incidents in the next hour fall within the top 10 predicted hotspot cells. A rate of 2.5% means the top 10 cells captured 2.5% of all incidents during the evaluation period."
+}
