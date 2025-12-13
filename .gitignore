@@ -10,6 +10,7 @@ __pycache__/
 
 # Virtual Environment
 venv/
+.venv/
 env/
 ENV/
 
@@ -24,6 +25,14 @@ ENV/
 .DS_Store
 Thumbs.db
 
+# Local env / tooling
+.env
+.env.*
+.python-version
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
 # Jupyter
 .ipynb_checkpoints/
 
@@ -33,6 +42,9 @@ data/facts/*.parquet
 
 # Streamlit
 .streamlit/
+
+# Local assets (keep repo clean; the UI uses inline SVG icons)
+ambulance.png
 
 # Distribution
 *.egg-info/
