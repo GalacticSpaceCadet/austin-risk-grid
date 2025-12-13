@@ -148,7 +148,6 @@ def main():
         metrics=metrics,
         placements=st.session_state.placements,
         mode=st.session_state.mode,
-        height=900,
         key="drag_drop_game_v1",
     )
 

@@ -192,11 +192,13 @@ function updateBay() {
       }
       els.ghost.innerHTML = ambulanceSVG();
       els.ghost.style.display = "block";
+      els.overlay.style.pointerEvents = "auto"; // Enable overlay to capture drop
       emitValue({ type: "dragstart", unitId: draggingUnitId });
     });
     div.addEventListener("dragend", () => {
       draggingUnitId = null;
       els.ghost.style.display = "none";
+      els.overlay.style.pointerEvents = "none"; // Restore map interactivity
       emitValue({ type: "dragend" });
     });
     els.bay.appendChild(div);

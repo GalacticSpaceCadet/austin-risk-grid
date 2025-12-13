@@ -84,12 +84,12 @@
         inset: 0;
       }
 
-      /* overlay for drag & HUD */
+      /* overlay for drag & HUD – pointer-events enabled only during drag */
       .mapOverlay {
         position: absolute;
         inset: 0;
         z-index: 5;
-        pointer-events: auto;
+        pointer-events: none;
       }
 
       .mapHud {

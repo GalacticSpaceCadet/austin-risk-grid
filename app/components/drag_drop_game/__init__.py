@@ -17,13 +17,14 @@ def drag_drop_game(
     metrics: Optional[dict[str, Any]] = None,
     placements: Optional[list[dict[str, Any]]] = None,
     mode: str = "Human",
-    height: int = 900,
+    height: Optional[int] = None,
     key: str = "drag_drop_game",
 ) -> dict[str, Any]:
     """
     Render the full-screen game UI (map + right panel) as a custom component.
 
     Returns the latest event payload emitted by the frontend.
+    If height is None, the frontend dynamically adjusts to viewport size.
     """
     return _component(
         risk_grid=risk_grid,
