@@ -51,6 +51,123 @@ function clamp(n, lo, hi) {
   return Math.max(lo, Math.min(hi, n));
 }
 
+// --- Scenario definitions ---
+// Template for scenarios - teammate can add more following this structure
+// datetime format: "YYYY-MM-DD HH:MM" (24-hour format, local Austin time)
+const SCENARIOS = {
+  default: {
+    id: "default",
+    name: "Normal Operations",
+    datetime: "2025-01-15 14:00",
+    description: "Position your four ambulances to maximize coverage of high-risk zones. Red areas indicate higher predicted incident probability for the next hour.",
+    hints: [
+      "Downtown and entertainment districts typically see higher call volumes.",
+      "Consider positioning units to minimize average response time across the city."
+    ],
+    difficulty: "normal",
+    expectedIncidentRange: [15, 25],
+    focusAreas: ["downtown", "university"],
+  },
+  sxsw: {
+    id: "sxsw",
+    name: "SXSW 2025",
+    datetime: "2025-03-14 22:00",
+    description: "South by Southwest is in full swing. Massive crowds concentrated downtown with multiple venues, outdoor stages, and late-night activities. Expect alcohol-related incidents and heat exhaustion.",
+    hints: [
+      "Convention Center and 6th Street corridor will see highest density.",
+      "Rainey Street and East Austin venues are secondary hotspots.",
+      "Peak hours: 10 PM - 2 AM for alcohol-related calls."
+    ],
+    difficulty: "hard",
+    expectedIncidentRange: [40, 60],
+    focusAreas: ["downtown", "6th-street", "rainey", "convention-center"],
+  },
+  acl: {
+    id: "acl",
+    name: "ACL Festival",
+    datetime: "2025-10-04 15:00",
+    description: "Austin City Limits Festival at Zilker Park. 75,000+ attendees daily with concentrated crowds, heat exposure, and limited vehicle access near the park.",
+    hints: [
+      "Zilker Park perimeter will have highest call volume.",
+      "Barton Springs Road access is restricted - plan alternate routes.",
+      "Heat-related emergencies peak mid-afternoon."
+    ],
+    difficulty: "hard",
+    expectedIncidentRange: [35, 50],
+    focusAreas: ["zilker", "barton-springs", "south-lamar"],
+  },
+  f1: {
+    id: "f1",
+    name: "F1 US Grand Prix",
+    datetime: "2025-10-19 13:00",
+    description: "Circuit of the Americas hosts 120,000+ race fans. Traffic congestion severe on east side. High-speed incidents possible near track, crowd crush risks at gates.",
+    hints: [
+      "COTA area will dominate call volume during race hours.",
+      "Downtown hotels see spillover evening incidents.",
+      "Airport corridor also experiences elevated activity."
+    ],
+    difficulty: "hard",
+    expectedIncidentRange: [30, 45],
+    focusAreas: ["cota", "airport", "downtown"],
+  },
+  july4: {
+    id: "july4",
+    name: "Fourth of July",
+    datetime: "2025-07-04 21:00",
+    description: "Independence Day celebrations across Austin. Multiple firework viewing locations, lakeside gatherings, and backyard parties citywide. Burns, trauma, and alcohol incidents elevated.",
+    hints: [
+      "Auditorium Shores and Lady Bird Lake are primary gathering spots.",
+      "Residential areas see increased firework-related injuries.",
+      "Call volume spikes dramatically after 9 PM."
+    ],
+    difficulty: "medium",
+    expectedIncidentRange: [25, 40],
+    focusAreas: ["lady-bird-lake", "auditorium-shores", "residential"],
+  },
+  halloween: {
+    id: "halloween",
+    name: "Halloween Weekend",
+    datetime: "2025-11-01 23:00",
+    description: "6th Street transforms into Austin's largest costume party. Extremely dense pedestrian crowds, alcohol-heavy environment, and limited vehicle access downtown.",
+    hints: [
+      "6th Street between Congress and I-35 is the epicenter.",
+      "Expect costume-related visibility issues for patients.",
+      "Peak calls between 11 PM and 3 AM."
+    ],
+    difficulty: "medium",
+    expectedIncidentRange: [30, 45],
+    focusAreas: ["6th-street", "downtown", "west-campus"],
+  },
+  nye: {
+    id: "nye",
+    name: "New Year's Eve",
+    datetime: "2025-12-31 23:00",
+    description: "Multiple countdown events across Austin. Auditorium Shores main event, plus 6th Street, Rainey, and Domain gatherings. DUI incidents spike after midnight.",
+    hints: [
+      "Position for rapid response to downtown and south-central.",
+      "Post-midnight DUI incidents spread across highway corridors.",
+      "Cold weather increases slip/fall calls."
+    ],
+    difficulty: "medium",
+    expectedIncidentRange: [25, 35],
+    focusAreas: ["downtown", "auditorium-shores", "highways"],
+  },
+  ut_game: {
+    id: "ut_game",
+    name: "UT Football Game",
+    datetime: "2025-09-06 18:00",
+    description: "Longhorns home game at DKR Stadium. 100,000+ fans converge on campus. Tailgating starts early, crowd surge at kickoff and end of game.",
+    hints: [
+      "Campus and stadium perimeter are primary hotspots.",
+      "MLK Blvd and I-35 see major congestion.",
+      "Alcohol-related calls spike pre-game and post-game."
+    ],
+    difficulty: "medium",
+    expectedIncidentRange: [20, 35],
+    focusAreas: ["ut-campus", "stadium", "west-campus"],
+  },
+};
+
 function ambulanceSVG() {
   // Simple, crisp SVG (no external assets).
   return `
@@ -75,6 +192,30 @@ function ambulanceSVG() {
   </svg>`;
 }
 
+// AI ambulance - purple/violet color scheme
+function aiAmbulanceSVG() {
+  return `
+  <svg class="ambulanceSvg" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <defs>
+      <linearGradient id="gAi" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#a78bfa" stop-opacity="0.95"/>
+        <stop offset="1" stop-color="#8b5cf6" stop-opacity="0.92"/>
+      </linearGradient>
+    </defs>
+    <rect x="10" y="20" width="40" height="24" rx="6" fill="url(#gAi)" stroke="rgba(139,92,246,0.5)"/>
+    <rect x="12" y="32" width="36" height="6" fill="#7c3aed" opacity="0.92"/>
+    <rect x="16" y="24" width="18" height="10" rx="2" fill="#c4b5fd" opacity="0.55"/>
+    <rect x="36" y="24" width="10" height="18" rx="2" fill="#ede9fe" opacity="0.28"/>
+    <rect x="41" y="25" width="2" height="10" fill="#7c3aed"/>
+    <rect x="37" y="29" width="10" height="2" fill="#7c3aed"/>
+    <rect x="18" y="16" width="18" height="6" rx="3" fill="#8b5cf6" opacity="0.85"/>
+    <circle cx="22" cy="46" r="6" fill="#1f2937" opacity="0.85"/>
+    <circle cx="42" cy="46" r="6" fill="#1f2937" opacity="0.85"/>
+    <circle cx="22" cy="46" r="3" fill="#9ca3af" opacity="0.9"/>
+    <circle cx="42" cy="46" r="3" fill="#9ca3af" opacity="0.9"/>
+  </svg>`;
+}
+
 // --- Grid constants (must match backend CELL_DEG) ---
 const CELL_DEG = 0.005;
 const AUSTIN_BOUNDS = {
@@ -89,30 +230,45 @@ let state = {
   risk_grid: [],
   hotspots: [],
   metrics: {},
-  placements: [], // [{id:1..4, lat, lon, cell_id}]
+  placements: [], // [{id:1..n, lat, lon, cell_id}]
+  aiPlacements: [], // AI's selections
   mode: "Human",
+  scenario: "default",
+  ambulanceCount: 4,
+  showingAI: false,
 };
 
 let map = null;
 let deckOverlay = null;
-let markers = new Map(); // unitId -> maplibre Marker
+let markers = new Map(); // unitId -> maplibre Marker (player)
+let aiMarkers = new Map(); // unitId -> maplibre Marker (AI)
 let draggingUnitId = null;
 let dragStartPos = null;
 
 const els = {
-  mode: document.getElementById("mode"),
   bay: document.getElementById("bay"),
   overlay: document.getElementById("overlay"),
   ghost: document.getElementById("ghost"),
-  metaHour: document.getElementById("metaHour"),
-  metaCells: document.getElementById("metaCells"),
+  scenarioSelect: document.getElementById("scenarioSelect"),
+  scenarioDateTime: document.getElementById("scenarioDateTime"),
+  scenarioDateTimeText: document.getElementById("scenarioDateTimeText"),
+  ambulanceCount: document.getElementById("ambulanceCount"),
   deploy: document.getElementById("deploy"),
   reset: document.getElementById("reset"),
   storyCopy: document.getElementById("storyCopy"),
-  mCoverage: document.getElementById("mCoverage"),
-  mLift: document.getElementById("mLift"),
-  mWindow: document.getElementById("mWindow"),
+  storyHints: document.getElementById("storyHints"),
+  storyBody: document.getElementById("storyBody"),
+  storyEmoji: document.getElementById("storyEmoji"),
+  storyTitleText: document.getElementById("storyTitleText"),
   mIncidents: document.getElementById("mIncidents"),
+  // Header grade (shown during results)
+  headerGrade: document.getElementById("headerGrade"),
+  headerGradeText: document.getElementById("headerGradeText"),
+  // Scoring panel elements
+  scoringPanel: document.getElementById("scoringPanel"),
+  playerScore: document.getElementById("playerScore"),
+  aiScore: document.getElementById("aiScore"),
+  coverageScore: document.getElementById("coverageScore"),
 };
 
 function emitValue(payload) {
@@ -154,58 +310,114 @@ function upsertPlacement(id, lat, lon) {
 
 function resetPlacements() {
   state.placements = [];
-  // remove markers
+  state.aiPlacements = [];
+  state.showingAI = false;
+  
+  // Remove player markers
   for (const [, m] of markers) m.remove();
   markers.clear();
+  
+  // Remove AI markers
+  for (const [, m] of aiMarkers) m.remove();
+  aiMarkers.clear();
+  
+  // Hide scoring panel
+  hideScoringPanel();
+  
   updateBay();
+  updateDeployButton();
   emitValue({ type: "reset", placements: state.placements, mode: state.mode });
 }
 
-function updateMode(mode) {
-  state.mode = mode;
-  els.mode.value = mode;
-  emitValue({ type: "mode", mode });
+
+function formatScenarioDateTime(datetime) {
+  if (!datetime) return "—";
+  try {
+    const [datePart, timePart] = datetime.split(" ");
+    const [year, month, day] = datePart.split("-");
+    const [hour, minute] = timePart.split(":");
+    
+    const date = new Date(year, month - 1, day, hour, minute);
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    
+    const dayName = dayNames[date.getDay()];
+    const monthName = monthNames[date.getMonth()];
+    const dayNum = date.getDate();
+    const yearNum = date.getFullYear();
+    
+    // Format time in 12-hour format
+    let h = date.getHours();
+    const ampm = h >= 12 ? "PM" : "AM";
+    h = h % 12 || 12;
+    const m = String(date.getMinutes()).padStart(2, "0");
+    
+    return `${dayName}, ${monthName} ${dayNum}, ${yearNum} · ${h}:${m} ${ampm}`;
+  } catch (e) {
+    return datetime;
+  }
 }
 
 function updateStory() {
-  const cells = Array.isArray(state.risk_grid) ? state.risk_grid.length : 0;
-  const tBucket = cells > 0 && state.risk_grid[0] && state.risk_grid[0].t_bucket ? state.risk_grid[0].t_bucket : "—";
+  const scenario = SCENARIOS[state.scenario] || SCENARIOS.default;
   
-  // Update meta pills (they have nested spans: icon + text)
-  const hourSpan = els.metaHour.querySelector("span:last-child");
-  const cellsSpan = els.metaCells.querySelector("span:last-child");
-  if (hourSpan) hourSpan.textContent = tBucket === "—" ? "—" : tBucket;
-  if (cellsSpan) cellsSpan.textContent = cells ? `${cells.toLocaleString()} cells` : "— cells";
-
+  // Update description
+  els.storyCopy.textContent = scenario.description;
+  
+  // Update datetime display
+  els.scenarioDateTimeText.textContent = formatScenarioDateTime(scenario.datetime);
+  
+  // Update hints
+  els.storyHints.innerHTML = scenario.hints
+    .map(hint => `<div class="storyHint"><span class="hintIcon">💡</span><span>${hint}</span></div>`)
+    .join("");
+  
+  // Update incidents count
   const m = state.metrics || {};
-  const coverage = m.coverage_rate ?? null;
-  const windowDays = m.evaluation_window_days ?? m.evaluation_window ?? null;
   const incidents = m.total_incidents_evaluated ?? null;
-
-  // lift vs random is not always precomputed; keep it simple for UI polish.
-  let lift = null;
-  if (coverage !== null && cells > 0) {
-    const topN = 10;
-    const randomRate = topN / cells;
-    lift = randomRate > 0 ? coverage / randomRate : null;
-  }
-
-  els.mCoverage.textContent = fmtPct(coverage);
-  els.mLift.textContent = lift === null ? "—" : `${Number(lift).toFixed(1)}x`;
-  els.mWindow.textContent = windowDays === null ? "—" : `${windowDays}d`;
   els.mIncidents.textContent = fmtInt(incidents);
+  
+  // Sync scenario dropdown
+  if (els.scenarioSelect.value !== state.scenario) {
+    els.scenarioSelect.value = state.scenario;
+  }
+}
+
+function updateScenario(scenarioId) {
+  if (!SCENARIOS[scenarioId]) return;
+  state.scenario = scenarioId;
+  updateStory();
+  emitValue({ type: "scenario", scenario: scenarioId, mode: state.mode });
+}
+
+function allUnitsPlaced() {
+  return state.placements.length >= state.ambulanceCount;
+}
+
+function updateDeployButton() {
+  const allPlaced = allUnitsPlaced();
+  els.deploy.disabled = !allPlaced;
+  
+  if (state.showingAI) {
+    els.deploy.textContent = "Try Again";
+  } else if (allPlaced) {
+    els.deploy.textContent = "Compare with AI";
+  } else {
+    const remaining = state.ambulanceCount - state.placements.length;
+    els.deploy.textContent = `Place ${remaining} more unit${remaining > 1 ? "s" : ""}`;
+  }
 }
 
 function updateBay() {
   els.bay.innerHTML = "";
-  for (let i = 1; i <= 4; i += 1) {
+  for (let i = 1; i <= state.ambulanceCount; i += 1) {
     const placed = !!placementById(i);
     const div = document.createElement("div");
     div.className = "unit" + (placed ? " placed" : "");
     div.dataset.unitId = String(i);
     div.innerHTML = `
       ${ambulanceSVG()}
-      <span class="unitBadge">${placed ? "✓ Unit " + i : "Unit " + i}</span>
+      <span class="unitBadge">${placed ? "✓ " + i : "Unit " + i}</span>
     `;
     
     // Use pointer events for drag
@@ -297,6 +509,7 @@ function onDragEnd(e) {
     // Show popup on create/move since mouseenter won't fire (cursor already there)
     placeOrMoveMarker(unitId, placement.lat, placement.lon, { showPopupOnCreate: true });
     updateBay();
+    updateDeployButton();
     
     emitValue({
       type: "drop",
@@ -634,29 +847,193 @@ function hydrateFromArgs(args) {
   state.hotspots = Array.isArray(args.hotspots) ? args.hotspots : [];
   state.metrics = args.metrics || {};
   state.placements = Array.isArray(args.placements) ? args.placements : [];
-  state.mode = typeof args.mode === "string" ? args.mode : "Human";
 
   ensureMap();
-  updateMode(state.mode);
   updateStory();
   updateBay();
+  updateDeployButton();
   applyPlacementsFromArgs();
   refreshDeckLayers();
 
   setFrameHeight();
 }
 
-// Button handlers
-els.mode.addEventListener("change", (e) => {
-  updateMode(e.target.value);
+// --- AI Placement Functions ---
+function generateRandomAIPlacements() {
+  // Generate placements around downtown Austin
+  // In production, this will be replaced with actual AI recommendations from backend
+  // Downtown Austin center: approximately 30.267, -97.743
+  const downtownCenter = { lat: 30.267, lon: -97.743 };
+  const spread = 0.025; // ~2.5km spread around downtown
+  
+  const placements = [];
+  for (let i = 1; i <= state.ambulanceCount; i++) {
+    const lat = downtownCenter.lat + (Math.random() - 0.5) * spread * 2;
+    const lon = downtownCenter.lon + (Math.random() - 0.5) * spread * 2;
+    const snapped = snapToGrid(lat, lon);
+    placements.push({
+      id: i,
+      lat: snapped.lat,
+      lon: snapped.lon,
+      cell_id: snapped.cell_id,
+    });
+  }
+  return placements;
+}
+
+function placeAIMarker(unitId, lat, lon) {
+  if (!map) return;
+  
+  // Remove existing AI marker if present
+  const existing = aiMarkers.get(unitId);
+  if (existing) {
+    existing.remove();
+    aiMarkers.delete(unitId);
+  }
+  
+  const el = document.createElement("div");
+  el.className = "mapAmbulanceMarker ai-marker";
+  el.innerHTML = aiAmbulanceSVG() + `<span class="markerBadge">AI</span>`;
+  
+  const m = new maplibregl.Marker({ element: el, anchor: "center" })
+    .setLngLat([lon, lat])
+    .addTo(map);
+  
+  aiMarkers.set(unitId, m);
+}
+
+function calculatePlaceholderScores() {
+  // Placeholder scoring logic - will be replaced with real backend scoring
+  // For now, generate reasonable-looking scores
+  const playerScore = Math.floor(70 + Math.random() * 25); // 70-95
+  const aiScore = Math.floor(75 + Math.random() * 20); // 75-95
+  const coverage = Math.floor(60 + Math.random() * 35); // 60-95
+  
+  // Determine grade based on player score vs AI score
+  const diff = playerScore - aiScore;
+  let grade, gradeClass, feedback;
+  
+  if (diff >= 5) {
+    grade = "A";
+    gradeClass = "good";
+    feedback = "Excellent work! Your positioning outperformed the AI's recommendations. You identified high-risk areas that the model may have underweighted.";
+  } else if (diff >= -5) {
+    grade = "B+";
+    gradeClass = "good";
+    feedback = "Great job! Your placements are competitive with the AI's recommendations. You've demonstrated strong spatial reasoning for emergency response.";
+  } else if (diff >= -15) {
+    grade = "B";
+    gradeClass = "okay";
+    feedback = "Good effort! The AI found some additional coverage opportunities. Consider the hotspot clusters when positioning your units.";
+  } else {
+    grade = "C";
+    gradeClass = "poor";
+    feedback = "Room for improvement. The AI prioritized different areas based on historical incident patterns. Try focusing on the red zones.";
+  }
+  
+  return { playerScore, aiScore, coverage, grade, gradeClass, feedback };
+}
+
+function showScoringPanel(scores) {
+  // Update scores
+  els.playerScore.textContent = `${scores.playerScore}%`;
+  els.aiScore.textContent = `${scores.aiScore}%`;
+  els.coverageScore.textContent = `${scores.coverage}%`;
+  
+  // Update header: change title to "Results" and show grade
+  els.storyEmoji.textContent = "📊";
+  els.storyTitleText.textContent = "Results";
+  els.scenarioDateTime.classList.add("hidden");
+  els.headerGrade.textContent = scores.grade;
+  els.headerGrade.className = `headerGrade visible ${scores.gradeClass}`;
+  
+  // Hide the story body and show scoring panel
+  els.storyBody.style.display = "none";
+  els.scoringPanel.classList.add("visible");
+}
+
+function hideScoringPanel() {
+  // Restore header: change title back and hide grade
+  els.storyEmoji.textContent = "🚑";
+  els.storyTitleText.textContent = "Mission Briefing";
+  els.scenarioDateTime.classList.remove("hidden");
+  els.headerGrade.className = "headerGrade";
+  
+  // Show story body and hide scoring panel
+  els.scoringPanel.classList.remove("visible");
+  els.storyBody.style.display = "";
+}
+
+function showAIPlacements() {
+  // Generate AI placements (random for now, will integrate with backend later)
+  state.aiPlacements = generateRandomAIPlacements();
+  state.showingAI = true;
+  
+  // Place AI markers on map
+  for (const p of state.aiPlacements) {
+    placeAIMarker(p.id, p.lat, p.lon);
+  }
+  
+  // Calculate and show scores
+  const scores = calculatePlaceholderScores();
+  showScoringPanel(scores);
+  
+  updateDeployButton();
+  
+  emitValue({
+    type: "compare",
+    placements: state.placements,
+    aiPlacements: state.aiPlacements,
+    scenario: state.scenario,
+    ambulanceCount: state.ambulanceCount,
+    scores: scores,
+  });
+}
+
+function updateAmbulanceCount(count) {
+  const newCount = parseInt(count, 10);
+  if (newCount === state.ambulanceCount) return;
+  
+  state.ambulanceCount = newCount;
+  
+  // Remove any placements with id > newCount
+  state.placements = state.placements.filter(p => p.id <= newCount);
+  
+  // Remove corresponding markers
+  for (const [id, m] of markers.entries()) {
+    if (id > newCount) {
+      m.remove();
+      markers.delete(id);
+    }
+  }
+  
+  // Clear AI state
+  state.aiPlacements = [];
+  state.showingAI = false;
+  for (const [, m] of aiMarkers) m.remove();
+  aiMarkers.clear();
+  
+  updateBay();
+  updateDeployButton();
+}
+
+// Event handlers
+els.scenarioSelect.addEventListener("change", (e) => {
+  updateScenario(e.target.value);
+});
+
+els.ambulanceCount.addEventListener("change", (e) => {
+  updateAmbulanceCount(e.target.value);
 });
 
 els.deploy.addEventListener("click", () => {
-  emitValue({
-    type: "deploy",
-    placements: state.placements,
-    mode: state.mode,
-  });
+  if (state.showingAI) {
+    // Reset and try again
+    resetPlacements();
+  } else if (allUnitsPlaced()) {
+    // Show AI comparison
+    showAIPlacements();
+  }
 });
 
 els.reset.addEventListener("click", () => resetPlacements());

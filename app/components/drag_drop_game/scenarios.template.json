@@ -1,0 +1,131 @@
+{
+  "_template_info": {
+    "description": "Template for defining game scenarios. Copy this structure to add new scenarios.",
+    "instructions": [
+      "1. Each scenario needs a unique 'id' (lowercase, no spaces - use hyphens)",
+      "2. 'name' is the display name shown in the dropdown",
+      "3. 'description' should be 1-2 sentences explaining the situation",
+      "4. 'hints' are tips to help players make decisions (array of strings)",
+      "5. 'difficulty' affects expected challenge level",
+      "6. 'expectedIncidentRange' is [min, max] predicted incidents",
+      "7. 'focusAreas' lists key geographic zones for this scenario",
+      "8. Optional: 'timeContext', 'dateRange', 'riskFactors' for extra detail"
+    ]
+  },
+  
+  "scenarios": [
+    {
+      "id": "example-scenario",
+      "name": "Example Event Name",
+      "description": "Brief description of the scenario and what makes it unique. Explain the situation the player is facing.",
+      "hints": [
+        "First hint about where to focus resources.",
+        "Second hint about timing or special considerations.",
+        "Third hint about potential challenges."
+      ],
+      "difficulty": "normal",
+      "expectedIncidentRange": [20, 30],
+      "focusAreas": ["downtown", "area-2", "area-3"],
+      "timeContext": "Peak hours: 8 PM - 2 AM",
+      "dateRange": "March 7-16, 2025",
+      "riskFactors": [
+        "Large crowd gatherings",
+        "Alcohol-related incidents",
+        "Heat exposure"
+      ]
+    },
+
+    {
+      "id": "sxsw",
+      "name": "SXSW 2025",
+      "description": "South by Southwest is in full swing. Massive crowds concentrated downtown with multiple venues, outdoor stages, and late-night activities. Expect alcohol-related incidents and heat exhaustion.",
+      "hints": [
+        "Convention Center and 6th Street corridor will see highest density.",
+        "Rainey Street and East Austin venues are secondary hotspots.",
+        "Peak hours: 10 PM - 2 AM for alcohol-related calls."
+      ],
+      "difficulty": "hard",
+      "expectedIncidentRange": [40, 60],
+      "focusAreas": ["downtown", "6th-street", "rainey", "convention-center"],
+      "timeContext": "Peak: 10 PM - 2 AM",
+      "dateRange": "March 7-16, 2025",
+      "riskFactors": [
+        "Extreme crowd density",
+        "Alcohol consumption",
+        "Heat exhaustion",
+        "Pedestrian vs vehicle conflicts"
+      ]
+    },
+
+    {
+      "id": "acl",
+      "name": "ACL Festival",
+      "description": "Austin City Limits Festival at Zilker Park. 75,000+ attendees daily with concentrated crowds, heat exposure, and limited vehicle access near the park.",
+      "hints": [
+        "Zilker Park perimeter will have highest call volume.",
+        "Barton Springs Road access is restricted - plan alternate routes.",
+        "Heat-related emergencies peak mid-afternoon."
+      ],
+      "difficulty": "hard",
+      "expectedIncidentRange": [35, 50],
+      "focusAreas": ["zilker", "barton-springs", "south-lamar"],
+      "timeContext": "Peak: 2 PM - 6 PM (heat), 9 PM - 12 AM (alcohol)",
+      "dateRange": "October weekends",
+      "riskFactors": [
+        "Heat exhaustion",
+        "Dehydration",
+        "Crowd crush at stages",
+        "Limited vehicle access"
+      ]
+    },
+
+    {
+      "id": "f1",
+      "name": "F1 US Grand Prix",
+      "description": "Circuit of the Americas hosts 120,000+ race fans. Traffic congestion severe on east side. High-speed incidents possible near track, crowd crush risks at gates.",
+      "hints": [
+        "COTA area will dominate call volume during race hours.",
+        "Downtown hotels see spillover evening incidents.",
+        "Airport corridor also experiences elevated activity."
+      ],
+      "difficulty": "hard",
+      "expectedIncidentRange": [30, 45],
+      "focusAreas": ["cota", "airport", "downtown"],
+      "timeContext": "Race day: 12 PM - 6 PM peak",
+      "dateRange": "October weekend",
+      "riskFactors": [
+        "Traffic accidents",
+        "Crowd crush",
+        "International visitors unfamiliar with area",
+        "VIP security complications"
+      ]
+    }
+  ],
+
+  "_difficulty_levels": {
+    "easy": "Lower incident volume, more predictable patterns",
+    "normal": "Standard operations, typical call volume",
+    "medium": "Elevated activity, requires good positioning",
+    "hard": "High volume, complex geography, time pressure"
+  },
+
+  "_focus_areas_reference": {
+    "downtown": "Central business district, Congress Ave corridor",
+    "6th-street": "Entertainment district, Dirty 6th and surrounding",
+    "rainey": "Rainey Street bar district",
+    "convention-center": "Austin Convention Center and surrounding blocks",
+    "zilker": "Zilker Park and immediate surroundings",
+    "barton-springs": "Barton Springs Pool and Barton Creek Greenbelt access",
+    "south-lamar": "South Lamar Boulevard corridor",
+    "cota": "Circuit of the Americas and Del Valle area",
+    "airport": "Austin-Bergstrom International Airport area",
+    "ut-campus": "University of Texas main campus",
+    "stadium": "DKR Memorial Stadium and immediate surroundings",
+    "west-campus": "West Campus / student housing area",
+    "lady-bird-lake": "Lady Bird Lake trail and shoreline",
+    "auditorium-shores": "Auditorium Shores event space",
+    "highways": "I-35, Mopac, 183 corridors",
+    "residential": "General residential areas citywide"
+  }
+}
+
