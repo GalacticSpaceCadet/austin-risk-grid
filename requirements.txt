@@ -3,3 +3,4 @@ pyarrow
 requests
 streamlit
 pydeck
+shapely

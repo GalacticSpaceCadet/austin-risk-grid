@@ -49,15 +49,11 @@ def main():
     st.set_page_config(
         page_title="Austin Risk Grid",
         layout="wide",
-        initial_sidebar_state="expanded"
+        initial_sidebar_state="collapsed"
     )
 
-    # Title and description
+    # Compact title
     st.title("🚦 Next Hour Traffic Risk — Austin")
-    st.markdown("""
-    **Austin Risk Grid** predicts where traffic incidents are most likely in the next hour
-    and recommends where to stage response assets proactively.
-    """)
 
     # Load data
     try:
@@ -72,16 +68,10 @@ def main():
     risk_df = pd.DataFrame(risk_grid)
     hotspots_df = pd.DataFrame(hotspots)
 
-    # Display metadata
-    if len(risk_df) > 0:
-        st.info(f"📊 Scoring {len(risk_df):,} grid cells | ⏰ Next hour: {risk_df['t_bucket'].iloc[0]}")
-
-    # Load and display effectiveness metrics
+    # Compact metrics strip
     metrics = load_metrics_safe()
 
-    if metrics:
-        st.subheader("📈 Backtest Snapshot")
-
+    if metrics and len(risk_df) > 0:
         # Compute lift vs random
         total_cells = len(risk_df)
         coverage_rate = metrics.get('coverage_rate', 0)
@@ -89,43 +79,15 @@ def main():
         random_rate = top_n / total_cells if total_cells > 0 else 0
         lift = coverage_rate / random_rate if random_rate > 0 else 0
 
-        # Display metrics in columns
-        met_col1, met_col2, met_col3, met_col4 = st.columns(4)
+        # Compact metrics row
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Coverage", f"{coverage_rate * 100:.1f}%")
+        m2.metric("Lift", f"{lift:.1f}x")
+        m3.metric("Cells", f"{len(risk_df):,}")
+        m4.metric("Time", risk_df['t_bucket'].iloc[0][-8:-3])
 
-        with met_col1:
-            st.metric(
-                "Coverage (Top 10)",
-                f"{coverage_rate * 100:.2f}%",
-                help="Percentage of incidents captured by top 10 predicted cells"
-            )
-
-        with met_col2:
-            st.metric(
-                "Lift vs Random",
-                f"{lift:.1f}x",
-                help="How much better than random cell selection"
-            )
-
-        with met_col3:
-            st.metric(
-                "Evaluation Window",
-                f"{metrics.get('evaluation_window_days', 0)} days",
-                help="Historical period used for backtesting"
-            )
-
-        with met_col4:
-            st.metric(
-                "Incidents Evaluated",
-                f"{metrics.get('total_incidents_evaluated', 0):,}",
-                help="Total incidents in evaluation period"
-            )
-
-        st.divider()
-    else:
-        st.warning("⚠️ Effectiveness metrics not available. Run Phase 7A to generate backtest results.")
-
-    # Create two columns: map and sidebar
-    col1, col2 = st.columns([3, 1])
+    # Create two columns: map (dominant) and sidebar
+    col1, col2 = st.columns([4, 1])
 
     with col1:
         st.subheader("Risk Map")
@@ -189,31 +151,54 @@ def main():
         # Display hotspot list
         for _, hotspot in hotspots_df.iterrows():
             rank = hotspot['rank']
-            cell_id = hotspot['cell_id']
+            neighborhood = hotspot.get('neighborhood')
+            address = hotspot.get('address')
             lat = hotspot['lat']
             lon = hotspot['lon']
             risk_score = hotspot['risk_score']
             reason = hotspot['reason']
 
-            with st.expander(f"#{rank} — Risk: {risk_score:.2f}", expanded=(rank <= 3)):
-                st.write(f"**Location:** {cell_id}")
+            with st.expander(f"#{rank} — Risk: {risk_score:.2f}", expanded=False):
+                # Show neighborhood if available
+                if pd.notna(neighborhood):
+                    st.write(f"**Neighborhood:** {neighborhood}")
+
+                # Show address if available
+                if pd.notna(address):
+                    st.write(f"**Address:** {address}")
+
+                # Always show coordinates
                 st.write(f"**Coordinates:** {lat:.4f}, {lon:.4f}")
                 st.write(f"**Reason:** {reason}")
 
-    # Footer with statistics
-    st.divider()
-    col1, col2, col3 = st.columns(3)
+    # About and details in collapsed expander
+    with st.expander("ℹ️ About & Details", expanded=False):
+        st.markdown("""
+        **Austin Risk Grid** predicts where traffic incidents are most likely in the next hour
+        and recommends where to stage response assets proactively.
+        """)
 
-    with col1:
-        st.metric("Total Cells", f"{len(risk_df):,}")
+        st.subheader("Statistics")
+        s1, s2, s3 = st.columns(3)
+        with s1:
+            st.metric("Total Cells", f"{len(risk_df):,}")
+        with s2:
+            avg_risk = risk_df['risk_score'].mean()
+            st.metric("Avg Risk Score", f"{avg_risk:.4f}")
+        with s3:
+            max_risk = risk_df['risk_score'].max()
+            st.metric("Max Risk Score", f"{max_risk:.2f}")
 
-    with col2:
-        avg_risk = risk_df['risk_score'].mean()
-        st.metric("Avg Risk Score", f"{avg_risk:.4f}")
-
-    with col3:
-        max_risk = risk_df['risk_score'].max()
-        st.metric("Max Risk Score", f"{max_risk:.2f}")
+        if metrics:
+            st.subheader("Backtest Details")
+            st.markdown(f"""
+            - **Coverage Rate**: {coverage_rate * 100:.2f}% of incidents captured by top 10 predicted cells
+            - **Lift vs Random**: {lift:.1f}x better than random cell selection
+            - **Evaluation Window**: {metrics.get('evaluation_window_days', 0)} days of historical data
+            - **Incidents Evaluated**: {metrics.get('total_incidents_evaluated', 0):,} total incidents
+            - **Hours Evaluated**: {metrics.get('hours_evaluated', 0):,} hourly predictions tested
+            """)
+            st.caption(metrics.get('note', ''))
 
 
 if __name__ == "__main__":

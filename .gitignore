@@ -31,6 +31,9 @@ Thumbs.db
 data/raw/*.parquet
 data/facts/*.parquet
 
+# Generated outputs (large)
+outputs/risk_grid_latest.json
+
 # Streamlit
 .streamlit/
 
