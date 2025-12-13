@@ -10,6 +10,7 @@ __pycache__/
 
 # Virtual Environment
 venv/
+.venv/
 env/
 ENV/
 
@@ -24,6 +25,14 @@ ENV/
 .DS_Store
 Thumbs.db
 
+# Local env / tooling
+.env
+.env.*
+.python-version
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
 # Jupyter
 .ipynb_checkpoints/
 
@@ -32,10 +41,13 @@ data/raw/*.parquet
 data/facts/*.parquet
 
 # Generated outputs (large)
-outputs/risk_grid_latest.json
+outputs/*_latest.json
 
 # Streamlit
 .streamlit/
+
+# Local assets (keep repo clean; the UI uses inline SVG icons)
+ambulance.png
 
 # Distribution
 *.egg-info/
