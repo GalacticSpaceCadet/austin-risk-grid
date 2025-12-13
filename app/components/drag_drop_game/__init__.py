@@ -17,7 +17,6 @@ def drag_drop_game(
     metrics: Optional[dict[str, Any]] = None,
     placements: Optional[list[dict[str, Any]]] = None,
     mode: str = "Human",
-    height: int = 900,
     key: str = "drag_drop_game",
 ) -> dict[str, Any]:
     """
@@ -31,7 +30,6 @@ def drag_drop_game(
         metrics=metrics or {},
         placements=placements or [],
         mode=mode,
-        height=height,
         key=key,
         default={},
     )

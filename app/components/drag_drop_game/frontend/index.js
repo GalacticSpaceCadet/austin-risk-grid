@@ -75,12 +75,21 @@ function ambulanceSVG() {
   </svg>`;
 }
 
+// --- Grid constants (must match backend CELL_DEG) ---
+const CELL_DEG = 0.005;
+const AUSTIN_BOUNDS = {
+  latMin: 30.1,
+  latMax: 30.55,
+  lonMin: -97.95,
+  lonMax: -97.55,
+};
+
 // --- App state ---
 let state = {
   risk_grid: [],
   hotspots: [],
   metrics: {},
-  placements: [], // [{id:1..4, lat, lon}]
+  placements: [], // [{id:1..4, lat, lon, cell_id}]
   mode: "Human",
 };
 
@@ -88,6 +97,7 @@ let map = null;
 let deckOverlay = null;
 let markers = new Map(); // unitId -> maplibre Marker
 let draggingUnitId = null;
+let dragStartPos = null;
 
 const els = {
   mode: document.getElementById("mode"),
@@ -119,11 +129,29 @@ function placementById(id) {
   return state.placements.find((p) => Number(p.id) === Number(id));
 }
 
+// Snap coordinates to cell center
+function snapToGrid(lat, lon) {
+  const latBin = Math.floor(lat / CELL_DEG);
+  const lonBin = Math.floor(lon / CELL_DEG);
+  return {
+    lat: (latBin + 0.5) * CELL_DEG,
+    lon: (lonBin + 0.5) * CELL_DEG,
+    cell_id: `${latBin}_${lonBin}`,
+  };
+}
+
 function upsertPlacement(id, lat, lon) {
+  const snapped = snapToGrid(lat, lon);
   const idx = state.placements.findIndex((p) => Number(p.id) === Number(id));
-  const next = { id: Number(id), lat: Number(lat), lon: Number(lon) };
+  const next = {
+    id: Number(id),
+    lat: snapped.lat,
+    lon: snapped.lon,
+    cell_id: snapped.cell_id,
+  };
   if (idx === -1) state.placements.push(next);
   else state.placements[idx] = next;
+  return next;
 }
 
 function resetPlacements() {
@@ -176,31 +204,118 @@ function updateBay() {
   for (let i = 1; i <= 4; i += 1) {
     const placed = !!placementById(i);
     const div = document.createElement("div");
-    div.className = "unit";
-    div.draggable = true;
+    div.className = "unit" + (placed ? " placed" : "");
     div.dataset.unitId = String(i);
     div.innerHTML = `
       ${ambulanceSVG()}
-      <span class="unitBadge">Unit ${i}</span>
-      <span class="unitState">${placed ? "placed" : "drag me"}</span>
+      <span class="unitBadge">${placed ? "✓ Unit " + i : "Unit " + i}</span>
     `;
-    div.addEventListener("dragstart", (e) => {
-      draggingUnitId = Number(i);
-      if (e.dataTransfer) {
-        e.dataTransfer.setData("text/plain", String(i));
-        e.dataTransfer.effectAllowed = "move";
-      }
-      els.ghost.innerHTML = ambulanceSVG();
-      els.ghost.style.display = "block";
-      emitValue({ type: "dragstart", unitId: draggingUnitId });
+    
+    // Use pointer events for drag
+    div.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      startDrag(i, e.clientX, e.clientY);
     });
-    div.addEventListener("dragend", () => {
-      draggingUnitId = null;
-      els.ghost.style.display = "none";
-      emitValue({ type: "dragend" });
-    });
+    
     els.bay.appendChild(div);
   }
+}
+
+// --- Pointer-based drag system ---
+function startDrag(unitId, clientX, clientY) {
+  draggingUnitId = unitId;
+  dragStartPos = { x: clientX, y: clientY };
+  
+  // Show ghost at cursor
+  els.ghost.innerHTML = ambulanceSVG();
+  els.ghost.style.display = "block";
+  els.ghost.style.left = `${clientX}px`;
+  els.ghost.style.top = `${clientY - 26}px`; // offset to show above cursor
+  
+  // Mark the unit as being dragged
+  const unitEl = document.querySelector(`[data-unit-id="${unitId}"]`);
+  if (unitEl) unitEl.classList.add("dragging");
+  
+  // Add document-level listeners
+  document.addEventListener("pointermove", onDragMove);
+  document.addEventListener("pointerup", onDragEnd);
+  document.addEventListener("pointercancel", onDragEnd);
+  
+  emitValue({ type: "dragstart", unitId });
+}
+
+function onDragMove(e) {
+  if (!draggingUnitId) return;
+  
+  // Update ghost position
+  els.ghost.style.left = `${e.clientX}px`;
+  els.ghost.style.top = `${e.clientY - 26}px`;
+  
+  // Check if over map
+  const mapRect = document.getElementById("map").getBoundingClientRect();
+  const overMap = (
+    e.clientX >= mapRect.left &&
+    e.clientX <= mapRect.right &&
+    e.clientY >= mapRect.top &&
+    e.clientY <= mapRect.bottom
+  );
+  
+  els.ghost.classList.toggle("over-map", overMap);
+}
+
+function onDragEnd(e) {
+  if (!draggingUnitId) return;
+  
+  const unitId = draggingUnitId;
+  
+  // Check if dropped over map
+  const mapEl = document.getElementById("map");
+  const mapRect = mapEl.getBoundingClientRect();
+  const overMap = (
+    e.clientX >= mapRect.left &&
+    e.clientX <= mapRect.right &&
+    e.clientY >= mapRect.top &&
+    e.clientY <= mapRect.bottom
+  );
+  
+  if (overMap && map) {
+    // Convert screen coords to map coords
+    const x = e.clientX - mapRect.left;
+    const y = e.clientY - mapRect.top;
+    const lngLat = map.unproject([x, y]);
+    
+    // Place the unit (snaps to grid)
+    const placement = upsertPlacement(unitId, lngLat.lat, lngLat.lng);
+    placeOrMoveMarker(unitId, placement.lat, placement.lon);
+    updateBay();
+    
+    emitValue({
+      type: "drop",
+      unitId,
+      lat: placement.lat,
+      lon: placement.lon,
+      cell_id: placement.cell_id,
+      placements: state.placements,
+      mode: state.mode,
+    });
+  }
+  
+  // Cleanup
+  draggingUnitId = null;
+  dragStartPos = null;
+  els.ghost.style.display = "none";
+  els.ghost.classList.remove("over-map");
+  
+  // Remove dragging class from unit
+  const unitEl = document.querySelector(`[data-unit-id="${unitId}"]`);
+  if (unitEl) unitEl.classList.remove("dragging");
+  
+  // Remove document listeners
+  document.removeEventListener("pointermove", onDragMove);
+  document.removeEventListener("pointerup", onDragEnd);
+  document.removeEventListener("pointercancel", onDragEnd);
+  
+  emitValue({ type: "dragend" });
 }
 
 function ensureMap() {
@@ -222,8 +337,8 @@ function ensureMap() {
   map = new maplibregl.Map({
     container: "map",
     style: styleCandidates[0],
-    center: [-97.74, 30.27],
-    zoom: 10.8,
+    center: [-97.74, 30.30],
+    zoom: 12.2,
     pitch: 0,
     attributionControl: false,
   });
@@ -257,41 +372,35 @@ function ensureMap() {
     }
   });
 
-  // Drag-drop overlay handlers
-  els.overlay.addEventListener("dragover", (e) => {
-    e.preventDefault();
-    if (!draggingUnitId) return;
-    const rect = els.overlay.getBoundingClientRect();
-    const x = clamp(e.clientX - rect.left, 0, rect.width);
-    const y = clamp(e.clientY - rect.top, 0, rect.height);
-    els.ghost.style.left = `${x}px`;
-    els.ghost.style.top = `${y}px`;
-    if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
-  });
+  // Overlay no longer needs drag events - pointer events handle everything
+  // The overlay is kept for potential future tooltip/hover interactions
+}
 
-  els.overlay.addEventListener("drop", (e) => {
-    e.preventDefault();
-    const unitId = draggingUnitId || Number(e.dataTransfer?.getData("text/plain") || 0);
-    if (!unitId || !map) return;
-
-    const rect = els.overlay.getBoundingClientRect();
-    const x = clamp(e.clientX - rect.left, 0, rect.width);
-    const y = clamp(e.clientY - rect.top, 0, rect.height);
-    const lngLat = map.unproject([x, y]);
-
-    upsertPlacement(unitId, lngLat.lat, lngLat.lng);
-    placeOrMoveMarker(unitId, lngLat.lat, lngLat.lng);
-    updateBay();
-
-    emitValue({
-      type: "drop",
-      unitId,
-      lat: lngLat.lat,
-      lon: lngLat.lng,
-      placements: state.placements,
-      mode: state.mode,
+// Generate grid lines for the visible Austin area
+function generateGridLines() {
+  const lines = [];
+  
+  // Horizontal lines (constant latitude)
+  for (let lat = AUSTIN_BOUNDS.latMin; lat <= AUSTIN_BOUNDS.latMax; lat += CELL_DEG) {
+    lines.push({
+      path: [
+        [AUSTIN_BOUNDS.lonMin, lat],
+        [AUSTIN_BOUNDS.lonMax, lat],
+      ],
     });
-  });
+  }
+  
+  // Vertical lines (constant longitude)
+  for (let lon = AUSTIN_BOUNDS.lonMin; lon <= AUSTIN_BOUNDS.lonMax; lon += CELL_DEG) {
+    lines.push({
+      path: [
+        [lon, AUSTIN_BOUNDS.latMin],
+        [lon, AUSTIN_BOUNDS.latMax],
+      ],
+    });
+  }
+  
+  return lines;
 }
 
 function placeOrMoveMarker(unitId, lat, lon) {
@@ -303,9 +412,9 @@ function placeOrMoveMarker(unitId, lat, lon) {
   }
 
   const el = document.createElement("div");
-  el.className = "marker";
-  el.textContent = String(unitId);
-  const m = new maplibregl.Marker({ element: el }).setLngLat([lon, lat]).addTo(map);
+  el.className = "mapAmbulanceMarker";
+  el.innerHTML = ambulanceSVG() + `<span class="markerBadge">${unitId}</span>`;
+  const m = new maplibregl.Marker({ element: el, anchor: "center" }).setLngLat([lon, lat]).addTo(map);
   markers.set(unitId, m);
 }
 
@@ -314,6 +423,19 @@ function refreshDeckLayers() {
 
   const heatData = Array.isArray(state.risk_grid) ? state.risk_grid : [];
   const hotspotData = Array.isArray(state.hotspots) ? state.hotspots : [];
+  const gridLines = generateGridLines();
+
+  // Grid overlay - subtle lines showing cell boundaries
+  const gridLayer = new deck.PathLayer({
+    id: "grid-lines",
+    data: gridLines,
+    getPath: (d) => d.path,
+    getColor: [100, 116, 139, 40], // slate-500 with low opacity
+    getWidth: 1,
+    widthMinPixels: 0.5,
+    widthMaxPixels: 1,
+    pickable: false,
+  });
 
   // Heatmap: weights by risk_score. Keep radius moderate for a clean look.
   // A red/orange ramp (no green haze) to match the original dashboard vibe.
@@ -358,7 +480,8 @@ function refreshDeckLayers() {
     pickable: false,
   });
 
-  deckOverlay.setProps({ layers: [heatLayer, hotspotLayer, textLayer] });
+  // Grid first (bottom), then heat, then hotspots on top
+  deckOverlay.setProps({ layers: [gridLayer, heatLayer, hotspotLayer, textLayer] });
 }
 
 function applyPlacementsFromArgs() {
