@@ -40,6 +40,9 @@ Thumbs.db
 data/raw/*.parquet
 data/facts/*.parquet
 
+# Generated outputs (large)
+outputs/*_latest.json
+
 # Streamlit
 .streamlit/
 

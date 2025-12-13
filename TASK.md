@@ -317,53 +317,82 @@
 # 4. A user understands the plan in under 10 seconds
 
 # Task
+#  Current Phase
+# Phase 7A — Effectiveness Metric
 
-## Current Phase
-Phase 7A — Effectiveness Metric
-
-## Goal
-Compute a simple historical effectiveness metric showing how often top predicted hotspots capture next-hour incidents.
+# Goal
+# Compute a simple historical effectiveness metric showing how often top predicted hotspots capture next-hour incidents.
 
 ## Inputs
-- data/facts/traffic_cell_time_counts.parquet
-- outputs/risk_grid_latest.json
-- outputs/hotspots_latest.json
+# - data/facts/traffic_cell_time_counts.parquet
+# - outputs/risk_grid_latest.json
+# - outputs/hotspots_latest.json
 
 ## Implement
 
-### 1. Define evaluation window
-- Use the last 30 days of available data
-- Evaluate only hours where incidents actually occurred
+# 1. Define evaluation window
+# - Use the last 30 days of available data
+# - Evaluate only hours where incidents actually occurred
 
-### 2. Simulate predictions
-For each evaluation hour:
-- Treat that hour as "target_hour"
-- Use historical baseline + recent activity prior to that hour
-- Identify top 10 hotspot cell_ids (reuse current scoring logic)
+# 2. Simulate predictions
+# For each evaluation hour:
+# - Treat that hour as "target_hour"
+# - Use historical baseline + recent activity prior to that hour
+# - Identify top 10 hotspot cell_ids (reuse current scoring logic)
 
-### 3. Measure coverage
-For each evaluation hour:
-- Check whether any incidents in the next hour occurred in the top 10 predicted cells
-- Count covered incidents
+# 3. Measure coverage
+# For each evaluation hour:
+# - Check whether any incidents in the next hour occurred in the top 10 predicted cells
+# - Count covered incidents
 
-### 4. Compute metric
-- coverage_rate = (covered incidents) / (total incidents evaluated)
+# 4. Compute metric
+# - coverage_rate = (covered incidents) / (total incidents evaluated)
 
-### 5. Persist metric
-- Write outputs/metrics_latest.json with:
-  - coverage_rate
-  - evaluation_window (days)
-  - total_incidents_evaluated
-  - note explaining what the metric means
+# 5. Persist metric
+# - Write outputs/metrics_latest.json with:
+#  - coverage_rate
+#  - evaluation_window (days)
+#  - total_incidents_evaluated
+#  - note explaining what the metric means
+
+# Do Not Implement
+# - UI changes
+# - Model changes
+# - Weather adjustments
+# - Complex backtesting
+# - Visualization
+# Done When
+# 1. outputs/metrics_latest.json exists
+# 2. coverage_rate is between 0 and 1
+# 3. Metric explanation is human-readable
+
+# Task
+
+## Current Phase
+Phase 7B — Dashboard UX declutter
+
+## Goal
+Make the dashboard feel clean and decision focused by reducing clutter through progressive disclosure.
+
+## Implement
+1. Refactor app/dashboard.py layout so the default view shows only:
+   - a compact metrics strip
+   - the risk map as the dominant element
+   - a compact top hotspots list
+2. Move secondary content into tabs or expanders that are collapsed by default:
+   - summary statistics
+   - long explanations
+   - any detailed tables
+3. Keep all existing information available, just not visible by default.
 
 ## Do Not Implement
-- UI changes
-- Model changes
-- Weather adjustments
-- Complex backtesting
-- Visualization
+- No changes to data pipeline or scoring code
+- No changes to metrics computation
+- No new features
+- No schema changes to outputs
 
 ## Done When
-1. outputs/metrics_latest.json exists
-2. coverage_rate is between 0 and 1
-3. Metric explanation is human-readable
+1. First load feels uncluttered
+2. Map is visually dominant
+3. Full details are still accessible via expanders or tabs
+4. The dashboard still runs with streamlit without errors

@@ -7,10 +7,14 @@ Score all cells, not just those with historical incidents at target hour.
 import pandas as pd
 import json
 from pathlib import Path
+from shapely.geometry import Point, shape
 
 
 # Grid cell size in degrees (must match Phase 2)
 CELL_DEG = 0.005
+
+# Neighborhood data cache
+_NEIGHBORHOODS = None
 
 
 def load_data(enriched_path, facts_path):
@@ -33,6 +37,92 @@ def load_data(enriched_path, facts_path):
     print(f"Loaded {len(facts_df)} fact rows")
 
     return enriched_df, facts_df
+
+
+def load_neighborhoods():
+    """
+    Load Austin neighborhood boundaries from GeoJSON.
+    Uses cached data if already loaded.
+
+    Returns:
+        List of neighborhood features with geometries
+    """
+    global _NEIGHBORHOODS
+
+    if _NEIGHBORHOODS is not None:
+        return _NEIGHBORHOODS
+
+    print("\nLoading Austin neighborhood boundaries...")
+    neighborhoods_path = "data/austin_neighborhoods.geojson"
+
+    try:
+        with open(neighborhoods_path, 'r') as f:
+            geojson_data = json.load(f)
+
+        _NEIGHBORHOODS = geojson_data['features']
+        print(f"Loaded {len(_NEIGHBORHOODS)} neighborhoods")
+        return _NEIGHBORHOODS
+
+    except FileNotFoundError:
+        print(f"Warning: {neighborhoods_path} not found. Neighborhoods will not be assigned.")
+        _NEIGHBORHOODS = []
+        return []
+
+
+def find_neighborhood(lat, lon, neighborhoods):
+    """
+    Find which neighborhood a lat/lon point falls within.
+
+    Args:
+        lat: Latitude
+        lon: Longitude
+        neighborhoods: List of neighborhood features from GeoJSON
+
+    Returns:
+        Neighborhood name or None if not found
+    """
+    if not neighborhoods:
+        return None
+
+    point = Point(lon, lat)  # Note: shapely uses (x, y) = (lon, lat)
+
+    for feature in neighborhoods:
+        polygon = shape(feature['geometry'])
+        if polygon.contains(point):
+            return feature['properties']['planning_area_name']
+
+    return None  # Point not in any neighborhood
+
+
+def attach_neighborhoods(df, neighborhoods):
+    """
+    Add neighborhood names to DataFrame based on lat/lon coordinates.
+
+    Args:
+        df: DataFrame with 'lat' and 'lon' columns
+        neighborhoods: List of neighborhood features
+
+    Returns:
+        DataFrame with 'neighborhood' column added
+    """
+    print("\nMatching cells to neighborhoods...")
+
+    if not neighborhoods:
+        df['neighborhood'] = None
+        return df
+
+    # Match each row to a neighborhood
+    df['neighborhood'] = df.apply(
+        lambda row: find_neighborhood(row['lat'], row['lon'], neighborhoods),
+        axis=1
+    )
+
+    # Stats
+    matched = df['neighborhood'].notna().sum()
+    total = len(df)
+    print(f"Matched {matched}/{total} cells to neighborhoods ({matched/total*100:.1f}%)")
+
+    return df
 
 
 def define_scoring_time(facts_df):
@@ -224,42 +314,112 @@ def attach_coordinates(df):
     return df
 
 
-def generate_reasons(df):
+def attach_addresses(df, enriched_df, target_hour):
     """
-    Generate human-readable explanations based on signal composition.
+    Add street addresses from recent incidents to each cell.
+
+    Args:
+        df: Risk grid DataFrame with cell_id
+        enriched_df: Enriched incidents with address field
+        target_hour: Target hour timestamp
+
+    Returns:
+        DataFrame with 'address' column added
+    """
+    print("\nAttaching street addresses from recent incidents...")
+
+    # Get recent incidents (last 3 hours)
+    cutoff_time = target_hour - pd.Timedelta(hours=3)
+    recent_incidents = enriched_df[
+        (enriched_df['t_bucket'] > cutoff_time) &
+        (enriched_df['t_bucket'] <= target_hour)
+    ]
+
+    # Get most recent address per cell
+    address_by_cell = {}
+    for cell_id, group in recent_incidents.groupby('cell_id'):
+        # Get the most recent incident's address
+        most_recent = group.sort_values('timestamp', ascending=False).iloc[0]
+        address_by_cell[cell_id] = most_recent['address']
+
+    # Map addresses to risk grid
+    df['address'] = df['cell_id'].map(address_by_cell)
+
+    # Stats
+    with_address = df['address'].notna().sum()
+    total = len(df)
+    print(f"Found addresses for {with_address}/{total} cells ({with_address/total*100:.1f}%)")
+
+    return df
+
+
+def generate_reasons(df, enriched_df, target_hour):
+    """
+    Generate human-readable explanations based on signal composition and incident types.
 
     Args:
         df: Risk grid DataFrame
+        enriched_df: Enriched incidents DataFrame with issue_reported field
+        target_hour: Target hour timestamp
 
     Returns:
         DataFrame with reason column added
     """
-    print("\nGenerating explanation text...")
+    print("\nGenerating explanation text with incident types...")
+
+    # Get recent incidents (last 3 hours)
+    cutoff_time = target_hour - pd.Timedelta(hours=3)
+    recent_incidents = enriched_df[
+        (enriched_df['t_bucket'] > cutoff_time) &
+        (enriched_df['t_bucket'] <= target_hour)
+    ]
+
+    # Aggregate incident types by cell
+    incident_types_by_cell = {}
+    for cell_id, group in recent_incidents.groupby('cell_id'):
+        type_counts = group['issue_reported'].value_counts().head(2).to_dict()
+        incident_types_by_cell[cell_id] = type_counts
 
     def make_reason(row):
         baseline = row['baseline_rate']
         recent = row['recent_incidents']
+        cell_id = row['cell_id']
 
-        # Categorize based on which signal drives the score
-        if recent > 0 and baseline > 0.1:
-            return "Baseline risk elevated with recent incidents"
-        elif recent > 2:
-            return "Recent spike in nearby activity"
-        elif recent > 0:
-            return "Recent incidents detected in this area"
-        elif baseline > 0.15:
-            return "High historical incident frequency for this hour"
-        elif baseline > 0:
-            return "Low baseline risk for this location and time"
+        # Get incident types for this cell
+        incident_types = incident_types_by_cell.get(cell_id, {})
+
+        # Build incident type description
+        if incident_types:
+            top_types = list(incident_types.keys())
+            if len(top_types) == 1:
+                type_desc = f"{top_types[0]}"
+            else:
+                type_desc = f"{top_types[0]} and {top_types[1]}"
         else:
-            return "No historical incidents at this hour"
+            type_desc = None
+
+        # Categorize - prioritize showing incident types when available
+        if type_desc:
+            # Have recent incidents with known types
+            if recent > 2:
+                return f"Multiple recent: {type_desc}"
+            elif baseline > 0.1:
+                return f"{type_desc} + High baseline risk"
+            else:
+                return f"Recent: {type_desc}"
+        elif baseline > 0.15:
+            return "High historical incident frequency"
+        elif baseline > 0.05:
+            return "Moderate baseline risk"
+        else:
+            return "Low historical risk"
 
     df['reason'] = df.apply(make_reason, axis=1)
 
     # Count explanation types
     reason_counts = df['reason'].value_counts()
-    print("Explanation distribution:")
-    for reason, count in reason_counts.head(5).items():
+    print("Explanation distribution (top 10):")
+    for reason, count in reason_counts.head(10).items():
         print(f"  - {reason}: {count}")
 
     return df
@@ -330,7 +490,7 @@ def export_hotspots(hotspots, output_path):
 
     # Select columns for export
     hotspot_data = hotspots[[
-        'rank', 'cell_id', 'lat', 'lon', 't_bucket', 'risk_score', 'reason'
+        'rank', 'cell_id', 'neighborhood', 'address', 'lat', 'lon', 't_bucket', 'risk_score', 'reason'
     ]].copy()
 
     # Convert t_bucket to ISO string
@@ -376,8 +536,15 @@ def score_risk_v2():
     # Attach coordinates
     risk_grid = attach_coordinates(risk_grid)
 
-    # Generate reasons
-    risk_grid = generate_reasons(risk_grid)
+    # Load neighborhoods and attach to cells
+    neighborhoods = load_neighborhoods()
+    risk_grid = attach_neighborhoods(risk_grid, neighborhoods)
+
+    # Attach street addresses from recent incidents
+    risk_grid = attach_addresses(risk_grid, enriched_df, target_hour)
+
+    # Generate reasons with incident types
+    risk_grid = generate_reasons(risk_grid, enriched_df, target_hour)
 
     # Export risk grid
     risk_grid_path = "outputs/risk_grid_latest.json"

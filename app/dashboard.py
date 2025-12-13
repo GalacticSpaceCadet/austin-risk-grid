@@ -15,7 +15,6 @@ def main():
         layout="wide",
         initial_sidebar_state="collapsed",
     )
-
     try:
         with open("outputs/risk_grid_latest.json", "r") as f:
             risk_grid = json.load(f)
