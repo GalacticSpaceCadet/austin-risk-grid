@@ -104,8 +104,6 @@ const els = {
   bay: document.getElementById("bay"),
   overlay: document.getElementById("overlay"),
   ghost: document.getElementById("ghost"),
-  hudLeft: document.getElementById("hudLeft"),
-  hudRight: document.getElementById("hudRight"),
   metaHour: document.getElementById("metaHour"),
   metaCells: document.getElementById("metaCells"),
   deploy: document.getElementById("deploy"),
@@ -172,8 +170,12 @@ function updateMode(mode) {
 function updateStory() {
   const cells = Array.isArray(state.risk_grid) ? state.risk_grid.length : 0;
   const tBucket = cells > 0 && state.risk_grid[0] && state.risk_grid[0].t_bucket ? state.risk_grid[0].t_bucket : "—";
-  els.metaHour.textContent = `Next hour: ${tBucket === "—" ? "—" : tBucket}`;
-  els.metaCells.textContent = `Cells: ${cells ? cells.toLocaleString() : "—"}`;
+  
+  // Update meta pills (they have nested spans: icon + text)
+  const hourSpan = els.metaHour.querySelector("span:last-child");
+  const cellsSpan = els.metaCells.querySelector("span:last-child");
+  if (hourSpan) hourSpan.textContent = tBucket === "—" ? "—" : tBucket;
+  if (cellsSpan) cellsSpan.textContent = cells ? `${cells.toLocaleString()} cells` : "— cells";
 
   const m = state.metrics || {};
   const coverage = m.coverage_rate ?? null;
@@ -190,13 +192,8 @@ function updateStory() {
 
   els.mCoverage.textContent = fmtPct(coverage);
   els.mLift.textContent = lift === null ? "—" : `${Number(lift).toFixed(1)}x`;
-  els.mWindow.textContent = windowDays === null ? "—" : `${windowDays} days`;
+  els.mWindow.textContent = windowDays === null ? "—" : `${windowDays}d`;
   els.mIncidents.textContent = fmtInt(incidents);
-
-  // HUD
-  els.hudLeft.textContent = cells
-    ? `Scoring ${cells.toLocaleString()} grid cells • Next hour: ${tBucket}`
-    : "Scoring —";
 }
 
 function updateBay() {
@@ -232,9 +229,19 @@ function startDrag(unitId, clientX, clientY) {
   els.ghost.style.left = `${clientX}px`;
   els.ghost.style.top = `${clientY - 26}px`; // offset to show above cursor
   
-  // Mark the unit as being dragged
-  const unitEl = document.querySelector(`[data-unit-id="${unitId}"]`);
-  if (unitEl) unitEl.classList.add("dragging");
+  // Mark the bay unit as being dragged
+  const bayUnitEl = els.bay.querySelector(`[data-unit-id="${unitId}"]`);
+  if (bayUnitEl) bayUnitEl.classList.add("dragging");
+  
+  // Also mark the map marker as being dragged (if it exists)
+  const marker = markers.get(unitId);
+  if (marker) {
+    const markerEl = marker.getElement();
+    if (markerEl) markerEl.classList.add("dragging");
+    // Remove animate-move class during drag (no transition while dragging)
+    const markerWrapper = markerEl.closest(".maplibregl-marker");
+    if (markerWrapper) markerWrapper.classList.remove("animate-move");
+  }
   
   // Add document-level listeners
   document.addEventListener("pointermove", onDragMove);
@@ -280,13 +287,15 @@ function onDragEnd(e) {
   
   if (overMap && map) {
     // Convert screen coords to map coords
+    // Subtract 26px to match the ghost offset (ghost appears above cursor)
     const x = e.clientX - mapRect.left;
-    const y = e.clientY - mapRect.top;
+    const y = e.clientY - mapRect.top - 26;
     const lngLat = map.unproject([x, y]);
     
     // Place the unit (snaps to grid)
     const placement = upsertPlacement(unitId, lngLat.lat, lngLat.lng);
-    placeOrMoveMarker(unitId, placement.lat, placement.lon);
+    // Show popup on create/move since mouseenter won't fire (cursor already there)
+    placeOrMoveMarker(unitId, placement.lat, placement.lon, { showPopupOnCreate: true });
     updateBay();
     
     emitValue({
@@ -301,14 +310,31 @@ function onDragEnd(e) {
   }
   
   // Cleanup
+  const draggedUnitId = draggingUnitId;
   draggingUnitId = null;
   dragStartPos = null;
   els.ghost.style.display = "none";
   els.ghost.classList.remove("over-map");
   
-  // Remove dragging class from unit
-  const unitEl = document.querySelector(`[data-unit-id="${unitId}"]`);
-  if (unitEl) unitEl.classList.remove("dragging");
+  // Remove dragging class from bay unit
+  const bayUnitEl = els.bay.querySelector(`[data-unit-id="${draggedUnitId}"]`);
+  if (bayUnitEl) bayUnitEl.classList.remove("dragging");
+  
+  // Remove dragging class from map marker
+  const marker = markers.get(draggedUnitId);
+  if (marker) {
+    const markerEl = marker.getElement();
+    if (markerEl) {
+      markerEl.classList.remove("dragging");
+      // Add animate-move class for smooth snap-to-grid animation
+      const markerWrapper = markerEl.closest(".maplibregl-marker");
+      if (markerWrapper) {
+        markerWrapper.classList.add("animate-move");
+        // Remove after animation completes
+        setTimeout(() => markerWrapper.classList.remove("animate-move"), 350);
+      }
+    }
+  }
   
   // Remove document listeners
   document.removeEventListener("pointermove", onDragMove);
@@ -322,8 +348,7 @@ function ensureMap() {
   if (map) return;
 
   if (!window.maplibregl) {
-    els.hudLeft.textContent = "Map failed to load";
-    els.hudRight.textContent = "MapLibre script didn’t load (network/CSP).";
+    console.error("MapLibre script didn't load (network/CSP).");
     return;
   }
 
@@ -360,7 +385,7 @@ function ensureMap() {
   // deck.gl overlay for heatmap + hotspots
   map.on("load", () => {
     try {
-      if (!window.deck) throw new Error("deck.gl script didn’t load");
+      if (!window.deck) throw new Error("deck.gl script didn't load");
       const { MapboxOverlay } = deck;
       deckOverlay = new MapboxOverlay({ interleaved: true, layers: [] });
       map.addControl(deckOverlay);
@@ -368,8 +393,17 @@ function ensureMap() {
     } catch (e) {
       // If deck.gl overlay fails (CDN blocked, etc), we still keep the map.
       console.warn("Deck overlay init failed", e);
-      els.hudRight.textContent = "Risk overlay unavailable (deck.gl didn’t load).";
+      els.hudRight.textContent = "Risk overlay unavailable (deck.gl didn't load).";
     }
+    
+    // Force resize after load to fix blank bottom half issue
+    setTimeout(() => map.resize(), 100);
+    setTimeout(() => map.resize(), 500);
+  });
+  
+  // Also resize when map container becomes visible/resizes
+  map.on("idle", () => {
+    map.resize();
   });
 
   // Overlay no longer needs drag events - pointer events handle everything
@@ -403,19 +437,111 @@ function generateGridLines() {
   return lines;
 }
 
-function placeOrMoveMarker(unitId, lat, lon) {
+function placeOrMoveMarker(unitId, lat, lon, options = {}) {
   if (!map) return;
   const existing = markers.get(unitId);
+  const snapped = snapToGrid(lat, lon);
+  const { showPopupOnCreate = false } = options;
+  
   if (existing) {
+    // Add animation class before moving
+    const markerWrapper = existing.getElement()?.closest(".maplibregl-marker");
+    if (markerWrapper) markerWrapper.classList.add("animate-move");
+    
     existing.setLngLat([lon, lat]);
+    
+    // Update popup content with new location
+    const popup = existing.getPopup();
+    if (popup) {
+      popup.setHTML(markerPopupHTML(unitId, lat, lon, snapped.cell_id));
+      // Show popup after moving using marker's toggle
+      if (showPopupOnCreate && !popup.isOpen()) {
+        existing.togglePopup();
+        // Auto-hide after a delay if mouse not hovering
+        setTimeout(() => {
+          const el = existing.getElement();
+          if (el && !el.matches(":hover") && popup.isOpen()) {
+            existing.togglePopup();
+          }
+        }, 2500);
+      }
+    }
+    
+    // Remove animation class after animation completes
+    if (markerWrapper) {
+      setTimeout(() => markerWrapper.classList.remove("animate-move"), 350);
+    }
     return;
   }
 
   const el = document.createElement("div");
   el.className = "mapAmbulanceMarker";
+  el.dataset.unitId = String(unitId);
   el.innerHTML = ambulanceSVG() + `<span class="markerBadge">${unitId}</span>`;
-  const m = new maplibregl.Marker({ element: el, anchor: "center" }).setLngLat([lon, lat]).addTo(map);
+  
+  // Create popup with location details - position above the marker
+  const popup = new maplibregl.Popup({ 
+    offset: [0, -28],
+    closeButton: false,
+    closeOnClick: false,
+    anchor: "bottom",
+    className: "ambulance-popup"
+  }).setHTML(markerPopupHTML(unitId, lat, lon, snapped.cell_id));
+  
+  const m = new maplibregl.Marker({ element: el, anchor: "center" })
+    .setLngLat([lon, lat])
+    .setPopup(popup)
+    .addTo(map);
+  
+  // Make marker draggable - attach pointer events directly
+  el.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Hide popup when starting drag
+    if (popup.isOpen()) m.togglePopup();
+    startDrag(unitId, e.clientX, e.clientY);
+  });
+  
+  // Show popup on hover using marker's toggle (but not during drag)
+  el.addEventListener("mouseenter", () => {
+    if (!draggingUnitId && !popup.isOpen()) {
+      m.togglePopup();
+    }
+  });
+  el.addEventListener("mouseleave", () => {
+    if (popup.isOpen()) {
+      m.togglePopup();
+    }
+  });
+  
   markers.set(unitId, m);
+  
+  // Show popup immediately after creating marker (since mouseenter won't fire)
+  if (showPopupOnCreate) {
+    // Small delay to ensure marker is rendered and positioned
+    setTimeout(() => {
+      if (!popup.isOpen()) {
+        m.togglePopup();
+      }
+      // Auto-hide after a delay if mouse not hovering
+      setTimeout(() => {
+        if (!el.matches(":hover") && popup.isOpen()) {
+          m.togglePopup();
+        }
+      }, 2500);
+    }, 100);
+  }
+}
+
+function markerPopupHTML(unitId, lat, lon, cellId) {
+  return `
+    <div class="popup-content">
+      <strong>Unit ${unitId}</strong><br>
+      <span class="popup-label">Lat:</span> ${lat.toFixed(5)}<br>
+      <span class="popup-label">Lon:</span> ${lon.toFixed(5)}<br>
+      <span class="popup-label">Cell:</span> ${cellId}
+    </div>
+  `;
 }
 
 function refreshDeckLayers() {
@@ -556,6 +682,22 @@ setTimeout(() => setFrameHeight(), 50);
 
 // Keep height in sync
 new ResizeObserver(() => setFrameHeight()).observe(document.documentElement);
-window.addEventListener("resize", () => setFrameHeight());
+window.addEventListener("resize", () => {
+  setFrameHeight();
+  // Also resize map when window resizes
+  if (map) {
+    map.resize();
+  }
+});
+
+// Watch for map container size changes to fix blank bottom half
+const mapContainer = document.getElementById("map");
+if (mapContainer) {
+  new ResizeObserver(() => {
+    if (map) {
+      map.resize();
+    }
+  }).observe(mapContainer);
+}
 
 
