@@ -132,11 +132,118 @@ def main():
     st.markdown(
         """
         <style>
-          header, footer { visibility: hidden; height: 0px; }
-          .block-container { padding: 0 !important; max-width: 100% !important; }
-          div[data-testid="stAppViewContainer"] { padding: 0 !important; }
-          section.main > div { padding: 0 !important; }
-          html, body, [data-testid="stAppViewContainer"], [data-testid="stApp"] { height: 100% !important; overflow: hidden !important; }
+          /* Hide Streamlit header/footer/menu completely */
+          header, footer, #MainMenu, 
+          [data-testid="stHeader"], 
+          [data-testid="stToolbar"],
+          [data-testid="stDecoration"],
+          [data-testid="stStatusWidget"],
+          [data-testid="stBottomBlockContainer"] { 
+            visibility: hidden !important; 
+            height: 0 !important; 
+            padding: 0 !important; 
+            margin: 0 !important;
+            display: none !important;
+          }
+          
+          /* Remove ALL padding/margins/gaps from Streamlit containers */
+          .block-container,
+          [data-testid="stAppViewBlockContainer"] { 
+            padding: 0 !important; 
+            max-width: 100% !important; 
+            margin: 0 !important; 
+            padding-top: 0 !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            padding-bottom: 0 !important;
+            gap: 0 !important;
+          }
+          div[data-testid="stAppViewContainer"] { 
+            padding: 0 !important; 
+            padding-top: 0 !important;
+            gap: 0 !important;
+          }
+          section.main > div { 
+            padding: 0 !important;
+            padding-top: 0 !important;
+            gap: 0 !important;
+          }
+          .stApp { 
+            margin: 0 !important; 
+            padding: 0 !important; 
+          }
+          
+          /* Make app fill viewport exactly - zero everything */
+          html, body, #root { 
+            height: 100% !important; 
+            margin: 0 !important; 
+            padding: 0 !important; 
+            overflow: hidden !important;
+            background: #f6f7fb !important;
+          }
+          [data-testid="stAppViewContainer"], 
+          [data-testid="stApp"],
+          .main,
+          section.main { 
+            height: 100vh !important; 
+            overflow: hidden !important;
+            background: #f6f7fb !important;
+            padding-top: 0 !important;
+            margin-top: 0 !important;
+            gap: 0 !important;
+          }
+          
+          /* Remove top padding and gaps that Streamlit adds */
+          .stMainBlockContainer,
+          [data-testid="stMainBlockContainer"],
+          [data-testid="stVerticalBlockBorderWrapper"] {
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            margin: 0 !important;
+            min-height: 100vh !important;
+            gap: 0 !important;
+          }
+          
+          /* Target ALL vertical blocks and remove their gap */
+          .stVerticalBlock,
+          [data-testid="stVerticalBlock"],
+          div[class*="stVerticalBlock"] {
+            gap: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          
+          /* Ensure iframe container has no extra space */
+          .element-container, 
+          .stMarkdown, 
+          [data-testid="element-container"],
+          .stElementContainer {
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          
+          /* Style the iframe itself */
+          iframe,
+          .stCustomComponentV1 {
+            display: block !important;
+            border: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          
+          /* Target Streamlit's custom component wrapper specifically */
+          [data-testid="stCustomComponentV1"],
+          div[class*="stCustomComponentV1"] {
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          
+          /* Hide any warning/info messages in demo mode */
+          .stAlert {
+            display: none !important;
+          }
         </style>
         """,
         unsafe_allow_html=True,
@@ -148,7 +255,6 @@ def main():
         metrics=metrics,
         placements=st.session_state.placements,
         mode=st.session_state.mode,
-        height=900,
         key="drag_drop_game_v1",
     )
 
