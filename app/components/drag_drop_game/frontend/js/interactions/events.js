@@ -12,6 +12,7 @@ import { showAIPlacements } from '../game/ai.js';
 import { markers, aiMarkers, clearAllMarkers, clearAllAIMarkers } from '../map/markers.js';
 import { refreshDeckLayers } from '../map/layers.js';
 import { startDrag } from './drag.js';
+import { undo, redo, clearHistory } from '../core/history.js';
 
 let els = null;
 
@@ -88,9 +89,10 @@ function updateScenario(scenarioId) {
     console.log(`No data for scenario '${scenarioId}', keeping current data`);
   }
 
-  // Reset placements when scenario changes
+  // Reset placements and history when scenario changes
   if (previousScenario !== scenarioId) {
     handleReset();
+    clearHistory();
   }
 
   updateStory();
@@ -177,4 +179,24 @@ export function initEventHandlers() {
 
   elements.deploy.addEventListener("click", handleDeploy);
   elements.reset.addEventListener("click", handleReset);
+
+  // Keyboard shortcuts for undo/redo
+  document.addEventListener('keydown', (e) => {
+    // Ignore if typing in an input field
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
+      return;
+    }
+
+    // Ctrl+Z or Cmd+Z for undo (without Shift)
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+      e.preventDefault();
+      undo();
+    }
+
+    // Ctrl+Y or Cmd+Shift+Z for redo
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+      e.preventDefault();
+      redo();
+    }
+  });
 }

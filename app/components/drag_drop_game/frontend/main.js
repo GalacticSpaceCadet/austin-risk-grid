@@ -16,6 +16,9 @@ import { initHelpIcons } from './js/ui/help.js';
 import { initDashboard } from './js/ui/dashboard.js';
 import { initTheme } from './js/ui/theme.js';
 import { initPlacementToggle } from './js/ui/placementToggle.js';
+import { initHistoryPanel } from './js/ui/historyPanel.js';
+import { setUpdateBayCallback } from './js/core/history.js';
+import { setUpdateBayCallbackPresets } from './js/core/presets.js';
 
 // Hydrate state from Streamlit args
 function hydrateFromArgs(args) {
@@ -62,12 +65,23 @@ function init() {
   initEventHandlers();
   initLoadingHandlers(retryMapLoad);
 
+  // Wire up callbacks to avoid circular dependencies
+  setUpdateBayCallback(updateBay);
+  setUpdateBayCallbackPresets(updateBay);
+
   // Initialize tutorial and help icons
   initTutorial();
   initHelpIcons();
 
   // Initialize metrics dashboard
   initDashboard();
+
+  // Initialize history panel (undo/redo, presets)
+  try {
+    initHistoryPanel();
+  } catch (e) {
+    console.error('History panel initialization failed:', e);
+  }
 
   // Initialize Human/AI placement toggle
   initPlacementToggle();

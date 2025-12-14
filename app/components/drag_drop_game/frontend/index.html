@@ -23,6 +23,7 @@
     <link rel="stylesheet" href="./css/metrics-dashboard.css">
     <link rel="stylesheet" href="./css/toggles.css">
     <link rel="stylesheet" href="./css/legend.css">
+    <link rel="stylesheet" href="./css/history-panel.css">
   </head>
 
   <body>
@@ -271,6 +272,51 @@
           <span class="context-label">Evaluation Window:</span>
           <span class="context-value" id="eval-window">-- days</span>
         </div>
+      </div>
+    </div>
+
+    <!-- Floating History Panel -->
+    <div id="history-panel" class="history-panel">
+      <div class="history-header" id="history-header">
+        <div class="history-title">
+          <span class="history-icon">&#x23F0;</span>
+          <span>History</span>
+        </div>
+        <button class="history-toggle-btn" id="history-collapse" aria-label="Collapse panel">
+          <span class="collapse-icon">-</span>
+        </button>
+      </div>
+
+      <div class="history-body" id="history-body">
+        <div class="history-controls">
+          <button class="history-btn" id="undo-btn" disabled title="Undo (Ctrl+Z)">
+            <span class="history-btn-icon">&#x21A9;</span>
+            <span>Undo</span>
+          </button>
+          <button class="history-btn" id="redo-btn" disabled title="Redo (Ctrl+Y)">
+            <span class="history-btn-icon">&#x21AA;</span>
+            <span>Redo</span>
+          </button>
+        </div>
+
+        <div class="history-list" id="history-list">
+          <!-- Populated dynamically -->
+        </div>
+
+        <div class="preset-section">
+          <div class="preset-header">
+            <span>Saved Presets</span>
+            <button class="preset-save-btn" id="save-preset-btn" disabled>+ Save</button>
+          </div>
+          <div class="preset-list" id="preset-list">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <button class="export-btn" id="export-btn" disabled>
+          <span>&#x1F4E4;</span>
+          <span>Export JSON</span>
+        </button>
       </div>
     </div>
 

@@ -13,6 +13,10 @@ const _state = {
   viewingMode: 'human', // 'human' | 'ai' - which placements are currently visible
   // Scenario data cache from backend
   allScenarioData: {}, // { scenarioId: { risk_grid, hotspots, metrics } }
+  // History management
+  history: [], // Array of history entries [{id, timestamp, action, description, placements, previousPlacements, unitId}]
+  historyIndex: -1, // Current position in history (-1 = no history)
+  maxHistorySize: 50, // Maximum entries to keep
 };
 
 // Subscribers for reactive updates
