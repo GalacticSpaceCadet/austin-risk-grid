@@ -43,3 +43,21 @@
   transform: none;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
+
+/* Dark mode button overrides */
+[data-theme="dark"] .btn:disabled {
+  background: linear-gradient(180deg, rgba(51, 65, 85, 0.7) 0%, rgba(30, 41, 59, 0.65) 100%);
+  border-color: rgba(71, 85, 105, 0.4);
+  color: rgba(148, 163, 184, 0.8);
+}
+
+[data-theme="dark"] .btnSecondary {
+  background: rgba(30, 41, 59, 0.9);
+  color: rgba(248, 250, 252, 0.88);
+  border-color: rgba(71, 85, 105, 0.4);
+}
+
+[data-theme="dark"] .btnSecondary:hover:not(:disabled) {
+  background: rgba(51, 65, 85, 0.9);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}

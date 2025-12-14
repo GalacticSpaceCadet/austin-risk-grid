@@ -3,9 +3,22 @@
 import { showMapLoading, hideMapLoading, showMapError, hideMapError } from '../ui/loading.js';
 import { showToast } from '../ui/toast.js';
 import { refreshDeckLayers } from './layers.js';
+import { getTheme } from '../ui/theme.js';
 
 let map = null;
 let deckOverlay = null;
+
+// Theme-aware map styles
+const MAP_STYLES = {
+  light: [
+    "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
+    "https://demotiles.maplibre.org/style.json",
+  ],
+  dark: [
+    "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
+    "https://basemaps.cartocdn.com/gl/dark-matter-nolabels-gl-style/style.json",
+  ]
+};
 
 // Callbacks for when map is ready
 const readyCallbacks = [];
@@ -66,6 +79,29 @@ export function retryMapLoad() {
   ensureMap();
 }
 
+// Get style candidates based on current theme
+function getStyleCandidates() {
+  const theme = getTheme();
+  return MAP_STYLES[theme] || MAP_STYLES.light;
+}
+
+// Switch map style when theme changes
+export function switchMapStyle(theme) {
+  if (!map) return;
+
+  const styleCandidates = MAP_STYLES[theme] || MAP_STYLES.light;
+  try {
+    map.setStyle(styleCandidates[0]);
+  } catch (e) {
+    console.warn('Failed to switch map style:', e);
+  }
+}
+
+// Listen for theme changes
+window.addEventListener('themechange', (e) => {
+  switchMapStyle(e.detail.theme);
+});
+
 export function ensureMap() {
   if (map) return map;
 
@@ -75,12 +111,8 @@ export function ensureMap() {
     return null;
   }
 
-  // Clean, light basemap closer to the old dashboard feel.
-  // If this style is blocked, MapLibre will error; we fall back below.
-  const styleCandidates = [
-    "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
-    "https://demotiles.maplibre.org/style.json",
-  ];
+  // Get theme-aware style candidates
+  const styleCandidates = getStyleCandidates();
 
   let styleAttempt = 0;
 

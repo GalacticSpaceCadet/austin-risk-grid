@@ -14,6 +14,8 @@ import { retryMapLoad } from './js/map/init.js';
 import { initTutorial } from './js/tutorial/controller.js';
 import { initHelpIcons } from './js/ui/help.js';
 import { initDashboard } from './js/ui/dashboard.js';
+import { initTheme } from './js/ui/theme.js';
+import { initPlacementToggle } from './js/ui/placementToggle.js';
 
 // Hydrate state from Streamlit args
 function hydrateFromArgs(args) {
@@ -53,6 +55,9 @@ function hydrateFromArgs(args) {
 
 // Initialize when DOM is ready
 function init() {
+  // Initialize theme first (before map loads to apply correct style)
+  initTheme();
+
   // Set up event handlers
   initEventHandlers();
   initLoadingHandlers(retryMapLoad);
@@ -63,6 +68,9 @@ function init() {
 
   // Initialize metrics dashboard
   initDashboard();
+
+  // Initialize Human/AI placement toggle
+  initPlacementToggle();
 
   // Set up drag callback to update bay
   setOnPlacementCallback(() => {

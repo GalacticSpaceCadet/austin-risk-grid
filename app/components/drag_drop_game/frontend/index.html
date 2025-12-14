@@ -21,6 +21,8 @@
     <link rel="stylesheet" href="./css/error.css">
     <link rel="stylesheet" href="./css/tutorial.css">
     <link rel="stylesheet" href="./css/metrics-dashboard.css">
+    <link rel="stylesheet" href="./css/toggles.css">
+    <link rel="stylesheet" href="./css/legend.css">
   </head>
 
   <body>
@@ -65,6 +67,16 @@
               </div>
               <div class="headerGrade" id="headerGrade">
                 <span id="headerGradeText">—</span>
+              </div>
+              <div class="placement-toggle hidden" id="placementToggle">
+                <button class="toggle-btn toggle-btn-human active" id="toggleHuman" aria-pressed="true">
+                  <span class="toggle-icon">👤</span>
+                  <span>Human</span>
+                </button>
+                <button class="toggle-btn toggle-btn-ai" id="toggleAI" aria-pressed="false">
+                  <span class="toggle-icon">🤖</span>
+                  <span>AI</span>
+                </button>
               </div>
             </div>
 
@@ -146,6 +158,42 @@
                 <option value="5">5 units</option>
                 <option value="6">6 units</option>
               </select>
+            </div>
+
+            <div style="height: 14px"></div>
+            <div class="risk-legend">
+              <div class="label">Risk Level</div>
+              <div class="legend-bar">
+                <div class="legend-gradient"></div>
+                <div class="legend-labels">
+                  <span>Low</span>
+                  <span>High</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="height: 14px"></div>
+            <div class="toggle-section">
+              <div class="label">Appearance</div>
+              <div class="toggle-row">
+                <button id="themeToggle" class="theme-toggle" aria-label="Toggle dark mode">
+                  <span class="theme-icon theme-icon-light">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="5"/>
+                      <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                    </svg>
+                  </span>
+                  <span class="theme-icon theme-icon-dark">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                    </svg>
+                  </span>
+                  <span class="toggle-track">
+                    <span class="toggle-thumb"></span>
+                  </span>
+                </button>
+                <span class="toggle-label" id="themeLabel">Light</span>
+              </div>
             </div>
 
             <div style="height: 12px"></div>

@@ -3,6 +3,39 @@
 import { getState } from '../core/state.js';
 import { CELL_DEG, AUSTIN_BOUNDS } from '../core/constants.js';
 import { getDeckOverlay } from './init.js';
+import { getTheme } from '../ui/theme.js';
+
+// Theme-aware heatmap color ranges
+const HEATMAP_COLORS = {
+  light: [
+    [255, 255, 255, 0],
+    [254, 240, 217, 180],
+    [253, 204, 138, 200],
+    [252, 141, 89, 220],
+    [227, 74, 51, 235],
+    [179, 0, 0, 245],
+  ],
+  dark: [
+    [0, 0, 0, 0],
+    [68, 46, 24, 180],
+    [120, 80, 40, 200],
+    [180, 100, 60, 220],
+    [220, 80, 50, 235],
+    [255, 60, 60, 245],
+  ]
+};
+
+// Theme-aware grid colors
+const GRID_COLORS = {
+  light: [100, 116, 139, 40],
+  dark: [148, 163, 184, 30],
+};
+
+// Listen for theme changes to refresh layers
+window.addEventListener('themechange', () => {
+  // Small delay to let map style switch first
+  setTimeout(() => refreshDeckLayers(), 150);
+});
 
 // Generate grid lines for the visible Austin area
 export function generateGridLines() {
@@ -32,11 +65,14 @@ export function generateGridLines() {
 }
 
 export function createGridLayer(gridLines) {
+  const theme = getTheme();
+  const gridColor = GRID_COLORS[theme] || GRID_COLORS.light;
+
   return new deck.PathLayer({
     id: "grid-lines",
     data: gridLines,
     getPath: (d) => d.path,
-    getColor: [100, 116, 139, 40], // slate-500 with low opacity
+    getColor: gridColor,
     getWidth: 1,
     widthMinPixels: 0.5,
     widthMaxPixels: 1,
@@ -45,8 +81,10 @@ export function createGridLayer(gridLines) {
 }
 
 export function createHeatmapLayer(data) {
+  const theme = getTheme();
+  const colorRange = HEATMAP_COLORS[theme] || HEATMAP_COLORS.light;
+
   // Heatmap: weights by risk_score. Keep radius moderate for a clean look.
-  // A red/orange ramp (no green haze) to match the original dashboard vibe.
   return new deck.HeatmapLayer({
     id: "risk-heat",
     data: data,
@@ -55,14 +93,7 @@ export function createHeatmapLayer(data) {
     radiusPixels: 32,
     intensity: 1.0,
     threshold: 0.12,
-    colorRange: [
-      [255, 255, 255, 0],
-      [254, 240, 217, 180],
-      [253, 204, 138, 200],
-      [252, 141, 89, 220],
-      [227, 74, 51, 235],
-      [179, 0, 0, 245],
-    ],
+    colorRange: colorRange,
   });
 }
 

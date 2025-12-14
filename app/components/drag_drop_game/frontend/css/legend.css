@@ -1,0 +1,33 @@
+/* Risk Zone Legend */
+.risk-legend {
+  margin-bottom: 4px;
+}
+
+.legend-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.legend-gradient {
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(
+    to right,
+    var(--risk-low) 0%,
+    var(--risk-medium) 50%,
+    var(--risk-high) 80%,
+    var(--risk-critical) 100%
+  );
+  border: 1px solid var(--border);
+}
+
+.legend-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-semibold);
+  color: var(--muted2);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}

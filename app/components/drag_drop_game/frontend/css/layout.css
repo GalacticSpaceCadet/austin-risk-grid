@@ -77,6 +77,12 @@ body {
   -moz-appearance: none;
 }
 
+[data-theme="dark"] .select {
+  border-color: rgba(148, 163, 184, 0.2);
+  background: rgba(30, 41, 59, 0.8);
+  color: rgba(248, 250, 252, 0.92);
+}
+
 /* Modern select styling */
 .selectWrap {
   position: relative;
@@ -92,6 +98,11 @@ body {
   border-bottom: 2px solid rgba(15, 23, 42, 0.55);
   transform: translateY(-60%) rotate(45deg);
   pointer-events: none;
+}
+
+[data-theme="dark"] .selectWrap:after {
+  border-right-color: rgba(148, 163, 184, 0.7);
+  border-bottom-color: rgba(148, 163, 184, 0.7);
 }
 
 /* keep things tight on smaller screens */

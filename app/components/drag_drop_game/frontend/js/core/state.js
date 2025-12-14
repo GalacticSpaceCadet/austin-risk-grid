@@ -10,6 +10,7 @@ const _state = {
   scenario: "default",
   ambulanceCount: 4,
   showingAI: false,
+  viewingMode: 'human', // 'human' | 'ai' - which placements are currently visible
   // Scenario data cache from backend
   allScenarioData: {}, // { scenarioId: { risk_grid, hotspots, metrics } }
 };
@@ -54,7 +55,9 @@ export function resetState() {
   _state.placements = [];
   _state.aiPlacements = [];
   _state.showingAI = false;
+  _state.viewingMode = 'human';
   notify('placements');
   notify('aiPlacements');
   notify('showingAI');
+  notify('viewingMode');
 }
