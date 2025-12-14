@@ -53,22 +53,23 @@ function getZoomResponsiveIntensity(zoom) {
   return Math.max(0.3, Math.min(scaleFactor * baseIntensity, 50));
 }
 
-// Theme-aware heatmap color ranges (traffic light: green → yellow → red)
+// Heatmap color range - clean gradient from transparent to red (no green noise)
+// Low risk areas are nearly invisible, only medium-high risk shows prominently
 const HEATMAP_COLORS = {
   light: [
-    [34, 197, 94, 120],     // Green - Low risk (subtle)
-    [134, 239, 172, 160],   // Light green
-    [250, 240, 137, 180],   // Yellow-green
-    [253, 224, 71, 200],    // Yellow - Medium risk
-    [251, 146, 60, 220],    // Orange
-    [239, 68, 68, 245],     // Red - High risk
+    [255, 255, 255, 0],     // Transparent - very low risk (invisible)
+    [254, 226, 226, 60],    // Very light red tint
+    [254, 202, 202, 120],   // Light red
+    [252, 165, 165, 160],   // Soft red
+    [248, 113, 113, 200],   // Medium red
+    [239, 68, 68, 240],     // Red - High risk
   ],
   dark: [
-    [22, 163, 74, 100],     // Dark green - Low risk (subtle)
-    [74, 222, 128, 140],    // Green
-    [234, 179, 8, 170],     // Yellow
-    [249, 115, 22, 200],    // Orange
-    [239, 68, 68, 230],     // Red-orange
+    [255, 255, 255, 0],     // Transparent - very low risk
+    [254, 226, 226, 40],    // Very light red tint
+    [252, 165, 165, 100],   // Soft red
+    [248, 113, 113, 160],   // Medium red
+    [239, 68, 68, 220],     // Red
     [220, 38, 38, 250],     // Bright red - High risk
   ]
 };
@@ -139,15 +140,18 @@ export function createHeatmapLayer(data, zoom = 12) {
   // Calculate zoom-responsive intensity to maintain proper color scaling at all zoom levels
   const intensity = getZoomResponsiveIntensity(zoom);
 
-  // Heatmap: weights by risk_score with traffic light gradient (green → yellow → red)
+  // Filter out very low risk data to reduce noise
+  const filteredData = data.filter(d => Number(d.risk_score || 0) > 0.15);
+
+  // Heatmap: only show medium-to-high risk areas, low risk is invisible
   return new deck.HeatmapLayer({
     id: "risk-heat",
-    data: data,
+    data: filteredData,
     getPosition: (d) => [Number(d.lon), Number(d.lat)],
     getWeight: (d) => Number(d.risk_score || 0),
     radiusPixels: radiusPixels,  // Scales with zoom level
-    intensity: intensity,        // Zoom-responsive for proper color scaling
-    threshold: 0.05,             // Lower threshold to show green (low-risk) areas
+    intensity: intensity * 1.5,  // Boost intensity for cleaner look
+    threshold: 0.15,             // Higher threshold to hide low-risk areas
     colorRange: colorRange,
   });
 }
@@ -157,11 +161,24 @@ export function createHotspotLayer(data) {
     id: "hotspots",
     data: data,
     getPosition: (d) => [Number(d.lon), Number(d.lat)],
-    getRadius: 220,
-    radiusMinPixels: 3,
-    radiusMaxPixels: 10,
-    getFillColor: [255, 59, 48, 200],
+    getRadius: 350,              // Larger radius for visibility
+    radiusMinPixels: 8,          // Bigger minimum size
+    radiusMaxPixels: 18,         // Bigger maximum size
+    getFillColor: (d) => {
+      // Pulsing effect for #1 hotspot (handled via opacity)
+      const rank = d.rank || 10;
+      if (rank === 1) {
+        return [220, 38, 38, 255];  // Bright red for #1
+      } else if (rank <= 3) {
+        return [239, 68, 68, 230];  // Strong red for top 3
+      } else {
+        return [248, 113, 113, 200]; // Softer red for others
+      }
+    },
     pickable: true,
+    stroked: true,
+    lineWidthMinPixels: 2,
+    getLineColor: [255, 255, 255, 200],  // White border for contrast
   });
 }
 
@@ -171,11 +188,15 @@ export function createTextLayer(data) {
     data: data,
     getPosition: (d) => [Number(d.lon), Number(d.lat)],
     getText: (d) => String(d.rank ?? ""),
-    getSize: 16,
+    getSize: 14,
+    fontWeight: 'bold',
     getColor: [255, 255, 255, 255],
     getTextAnchor: "middle",
     getAlignmentBaseline: "center",
     pickable: false,
+    // Add background for better readability
+    background: true,
+    getBackgroundColor: [0, 0, 0, 0],  // Transparent - the marker itself is the bg
   });
 }
 

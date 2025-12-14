@@ -19,11 +19,6 @@
     <link rel="stylesheet" href="./css/loading.css">
     <link rel="stylesheet" href="./css/toast.css">
     <link rel="stylesheet" href="./css/error.css">
-    <link rel="stylesheet" href="./css/tutorial.css">
-    <link rel="stylesheet" href="./css/metrics-dashboard.css">
-    <link rel="stylesheet" href="./css/toggles.css">
-    <link rel="stylesheet" href="./css/legend.css">
-    <link rel="stylesheet" href="./css/history-panel.css">
     <link rel="stylesheet" href="./css/comparison-controls.css">
     <link rel="stylesheet" href="./css/split-screen.css">
     <link rel="stylesheet" href="./css/diff-legend.css">
@@ -68,6 +63,18 @@
             <div id="overlay" class="mapOverlay"></div>
             <div id="ghost" class="ghost"></div>
 
+            <!-- Risk Level Legend (top right of map) -->
+            <div id="map-risk-legend" class="map-risk-legend">
+              <div class="map-legend-label">Risk Level</div>
+              <div class="map-legend-bar">
+                <div class="map-legend-gradient"></div>
+                <div class="map-legend-labels">
+                  <span>Low</span>
+                  <span>High</span>
+                </div>
+              </div>
+            </div>
+
             <!-- Coverage Diff Legend -->
             <div id="diff-legend" class="diff-legend hidden">
               <div class="diff-legend-title">Coverage Analysis</div>
@@ -103,20 +110,6 @@
               </div>
               <div class="headerGrade" id="headerGrade">
                 <span id="headerGradeText">—</span>
-              </div>
-              <div class="placement-toggle hidden" id="placementToggle">
-                <button class="toggle-btn toggle-btn-human active" id="toggleHuman" aria-pressed="true">
-                  <span class="toggle-icon">👤</span>
-                  <span>Human</span>
-                </button>
-                <button class="toggle-btn toggle-btn-both" id="toggleBoth" aria-pressed="false">
-                  <span class="toggle-icon">+</span>
-                  <span>Both</span>
-                </button>
-                <button class="toggle-btn toggle-btn-ai" id="toggleAI" aria-pressed="false">
-                  <span class="toggle-icon">🤖</span>
-                  <span>AI</span>
-                </button>
               </div>
             </div>
 
@@ -232,42 +225,6 @@
               </select>
             </div>
 
-            <div style="height: 14px"></div>
-            <div class="risk-legend">
-              <div class="label">Risk Level</div>
-              <div class="legend-bar">
-                <div class="legend-gradient"></div>
-                <div class="legend-labels">
-                  <span>Low</span>
-                  <span>High</span>
-                </div>
-              </div>
-            </div>
-
-            <div style="height: 14px"></div>
-            <div class="toggle-section">
-              <div class="label">Appearance</div>
-              <div class="toggle-row">
-                <button id="themeToggle" class="theme-toggle" aria-label="Toggle dark mode">
-                  <span class="theme-icon theme-icon-light">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <circle cx="12" cy="12" r="5"/>
-                      <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
-                    </svg>
-                  </span>
-                  <span class="theme-icon theme-icon-dark">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-                    </svg>
-                  </span>
-                  <span class="toggle-track">
-                    <span class="toggle-thumb"></span>
-                  </span>
-                </button>
-                <span class="toggle-label" id="themeLabel">Light</span>
-              </div>
-            </div>
-
             <div style="height: 12px"></div>
             <div class="label">Your placements (drag onto map)</div>
             <div id="bay" class="bay"></div>
@@ -283,141 +240,6 @@
 
     <!-- Toast notification container -->
     <div id="toast-container" class="toast-container"></div>
-
-    <!-- Floating Metrics Dashboard Panel -->
-    <div id="metrics-dashboard" class="metrics-dashboard">
-      <div class="metrics-header" id="metrics-header">
-        <div class="metrics-tabs">
-          <button class="metrics-tab active" id="tab-live">Live</button>
-          <button class="metrics-tab" id="tab-trends">Trends</button>
-        </div>
-        <button class="metrics-toggle-btn" id="metrics-collapse" aria-label="Collapse panel">
-          <span class="collapse-icon">−</span>
-        </button>
-      </div>
-
-      <div class="metrics-body" id="metrics-body">
-        <!-- Live Performance Content -->
-        <div id="metrics-live-content">
-          <div class="metrics-gauge-section">
-            <div class="gauge-container">
-              <svg class="gauge-svg" viewBox="0 0 120 70">
-                <path class="gauge-bg" d="M10 60 A50 50 0 0 1 110 60" />
-                <path class="gauge-fill" id="gauge-fill" d="M10 60 A50 50 0 0 1 110 60" />
-                <text class="gauge-label" x="18" y="55">AI</text>
-                <text class="gauge-label" x="95" y="55">You</text>
-              </svg>
-              <div class="gauge-score" id="gauge-score">--</div>
-              <div class="gauge-comparison" id="gauge-comparison">vs AI: --</div>
-            </div>
-          </div>
-
-          <div class="metrics-kpi-grid">
-            <div class="kpi-card" data-metric="coverage">
-              <div class="kpi-header">
-                <span class="kpi-label">Coverage</span>
-                <span class="kpi-trend" id="trend-coverage"></span>
-              </div>
-              <div class="kpi-value" id="kpi-coverage">--</div>
-              <div class="kpi-sparkline" id="sparkline-coverage"></div>
-            </div>
-
-            <div class="kpi-card" data-metric="incidents">
-              <div class="kpi-header">
-                <span class="kpi-label">Incidents</span>
-                <span class="kpi-trend" id="trend-incidents"></span>
-              </div>
-              <div class="kpi-value" id="kpi-incidents">--</div>
-              <div class="kpi-sparkline" id="sparkline-incidents"></div>
-            </div>
-
-            <div class="kpi-card" data-metric="efficiency">
-              <div class="kpi-header">
-                <span class="kpi-label">Score</span>
-                <span class="kpi-trend" id="trend-efficiency"></span>
-              </div>
-              <div class="kpi-value" id="kpi-efficiency">--</div>
-              <div class="kpi-sparkline" id="sparkline-efficiency"></div>
-            </div>
-          </div>
-
-          <div class="metrics-context">
-            <span class="context-label">Evaluation Window:</span>
-            <span class="context-value" id="eval-window">-- days</span>
-          </div>
-        </div>
-
-        <!-- Trends Content (Hidden by default) -->
-        <div id="metrics-trends-content" style="display: none;">
-          <div class="trends-section">
-            <div class="trends-header">
-              <span class="trends-label">Recent Performance</span>
-              <span class="sessions-badge"><span id="sessions-count">0</span> sessions</span>
-            </div>
-            <div class="trends-sparkline" id="trends-sparkline"></div>
-          </div>
-
-          <div class="trends-section">
-            <div class="trends-label">Scenario Comparison</div>
-            <div class="scenario-chart" id="scenario-chart">
-              <!-- Populated dynamically -->
-            </div>
-          </div>
-
-          <div class="trends-section">
-            <div class="trends-label">Insights</div>
-            <div class="time-insights" id="time-insights">
-              <!-- Populated dynamically -->
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Floating History Panel -->
-    <div id="history-panel" class="history-panel">
-      <div class="history-header" id="history-header">
-        <div class="history-title">
-          <span class="history-icon">&#x23F0;</span>
-          <span>History</span>
-        </div>
-        <button class="history-toggle-btn" id="history-collapse" aria-label="Collapse panel">
-          <span class="collapse-icon">-</span>
-        </button>
-      </div>
-
-      <div class="history-body" id="history-body">
-        <div class="history-controls">
-          <button class="history-btn" id="undo-btn" disabled title="Undo (Ctrl+Z)">
-            <span class="history-btn-icon">&#x21A9;</span>
-            <span>Undo</span>
-          </button>
-          <button class="history-btn" id="redo-btn" disabled title="Redo (Ctrl+Y)">
-            <span class="history-btn-icon">&#x21AA;</span>
-            <span>Redo</span>
-          </button>
-        </div>
-
-        <div class="history-list" id="history-list">
-          <!-- Populated dynamically -->
-        </div>
-
-        <div class="preset-section">
-          <div class="preset-header">
-            <span>Saved Presets</span>
-            <button class="preset-save-btn" id="save-preset-btn" disabled>+ Save</button>
-          </div>
-          <div class="preset-list" id="preset-list">
-            <!-- Populated dynamically -->
-          </div>
-        </div>
-
-        <button class="export-btn" id="export-btn" disabled>
-          <span>&#x1F4E4;</span>
-          <span>Export JSON</span>
-        </button>
-      </div>
-    </div>
 
     <!-- Floating Replay Panel -->
     <div id="replay-panel" class="replay-panel hidden">
