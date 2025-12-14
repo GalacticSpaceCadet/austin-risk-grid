@@ -12,11 +12,11 @@ import { initLoadingHandlers } from './js/ui/loading.js';
 import { updateStory, updateDeployButton } from './js/ui/story.js';
 import { retryMapLoad } from './js/map/init.js';
 import { initTutorial } from './js/tutorial/controller.js';
-import { initHelpIcons } from './js/ui/help.js';
-import { initDashboard } from './js/ui/dashboard.js';
-import { initTheme } from './js/ui/theme.js';
-import { initPlacementToggle } from './js/ui/placementToggle.js';
-import { initHistoryPanel } from './js/ui/historyPanel.js';
+// import { initHelpIcons } from './js/ui/help.js';  // Disabled for minimal UI
+// import { initDashboard } from './js/ui/dashboard.js';  // Disabled for minimal UI
+// import { initTheme } from './js/ui/theme.js';  // Disabled for minimal UI
+// import { initPlacementToggle } from './js/ui/placementToggle.js';  // Disabled - removed toggle
+// import { initHistoryPanel } from './js/ui/historyPanel.js';  // Disabled for minimal UI
 import { setUpdateBayCallback } from './js/core/history.js';
 import { setUpdateBayCallbackPresets } from './js/core/presets.js';
 import { showAIPlacements } from './js/game/ai.js';
@@ -139,9 +139,6 @@ function hydrateFromArgs(args) {
 
 // Initialize when DOM is ready
 function init() {
-  // Initialize theme first (before map loads to apply correct style)
-  initTheme();
-
   // Set up event handlers
   initEventHandlers();
   initLoadingHandlers(retryMapLoad);
@@ -150,22 +147,14 @@ function init() {
   setUpdateBayCallback(updateBay);
   setUpdateBayCallbackPresets(updateBay);
 
-  // Initialize tutorial and help icons
+  // Initialize tutorial (but not help icons - disabled for minimal UI)
   initTutorial();
-  initHelpIcons();
+  // initHelpIcons();  // Disabled for minimal UI
 
-  // Initialize metrics dashboard
-  initDashboard();
+  // initDashboard();  // Disabled for minimal UI
+  // initHistoryPanel();  // Disabled for minimal UI
 
-  // Initialize history panel (undo/redo, presets)
-  try {
-    initHistoryPanel();
-  } catch (e) {
-    console.error('History panel initialization failed:', e);
-  }
-
-  // Initialize Human/AI placement toggle
-  initPlacementToggle();
+  // initPlacementToggle();  // Disabled - removed toggle
 
   // Initialize comparison view controls
   initComparisonControls();

@@ -41,11 +41,11 @@ export function startDrag(unitId, clientX, clientY) {
   draggingUnitId = unitId;
   dragStartPos = { x: clientX, y: clientY };
 
-  // Show ghost at cursor
+  // Show ghost centered on cursor (ghost is 52x52, so offset by half)
   ghostEl.innerHTML = ambulanceSVG();
   ghostEl.style.display = "block";
-  ghostEl.style.left = `${clientX}px`;
-  ghostEl.style.top = `${clientY - 26}px`; // offset to show above cursor
+  ghostEl.style.left = `${clientX - 26}px`;
+  ghostEl.style.top = `${clientY - 26}px`;
 
   // Mark the bay unit as being dragged
   const bayUnitEl = bayEl.querySelector(`[data-unit-id="${unitId}"]`);
@@ -73,8 +73,8 @@ function onDragMove(e) {
   if (!draggingUnitId) return;
   getElements();
 
-  // Update ghost position
-  ghostEl.style.left = `${e.clientX}px`;
+  // Update ghost position (centered on cursor)
+  ghostEl.style.left = `${e.clientX - 26}px`;
   ghostEl.style.top = `${e.clientY - 26}px`;
 
   // Check if over map
@@ -97,9 +97,17 @@ function onDragEnd(e) {
   const unitId = draggingUnitId;
   const map = getMap();
 
-  // Check if dropped over map
+  // Get fresh map container reference and bounds
   const mapEl = document.getElementById("map");
-  const mapRect = mapEl.getBoundingClientRect();
+  if (!mapEl || !map) {
+    cleanupDrag(unitId);
+    return;
+  }
+
+  // Use the map's actual canvas container for accurate positioning
+  const mapCanvas = map.getCanvas();
+  const mapRect = mapCanvas.getBoundingClientRect();
+  
   const overMap = (
     e.clientX >= mapRect.left &&
     e.clientX <= mapRect.right &&
@@ -107,11 +115,10 @@ function onDragEnd(e) {
     e.clientY <= mapRect.bottom
   );
 
-  if (overMap && map) {
-    // Convert screen coords to map coords
-    // Subtract 26px to match the ghost offset (ghost appears above cursor)
+  if (overMap) {
+    // Convert screen coords to map coords - use canvas-relative position
     const x = e.clientX - mapRect.left;
-    const y = e.clientY - mapRect.top - 26;
+    const y = e.clientY - mapRect.top;
     const lngLat = map.unproject([x, y]);
 
     // Check if this is a new placement vs a move
@@ -146,18 +153,23 @@ function onDragEnd(e) {
   }
 
   // Cleanup
-  const draggedUnitId = draggingUnitId;
+  cleanupDrag(unitId);
+}
+
+function cleanupDrag(unitId) {
+  getElements();
+  
   draggingUnitId = null;
   dragStartPos = null;
   ghostEl.style.display = "none";
   ghostEl.classList.remove("over-map");
 
   // Remove dragging class from bay unit
-  const bayUnitEl = bayEl.querySelector(`[data-unit-id="${draggedUnitId}"]`);
+  const bayUnitEl = bayEl.querySelector(`[data-unit-id="${unitId}"]`);
   if (bayUnitEl) bayUnitEl.classList.remove("dragging");
 
   // Remove dragging class from map marker
-  const marker = markers.get(draggedUnitId);
+  const marker = markers.get(unitId);
   if (marker) {
     const markerEl = marker.getElement();
     if (markerEl) {

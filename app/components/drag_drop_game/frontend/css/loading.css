@@ -13,11 +13,12 @@
   z-index: 3;
   transition: opacity 0.3s ease-out;
   border-radius: var(--radius);
+  pointer-events: none;  /* Never block map interaction */
 }
 
 .skeleton-map.hidden {
   opacity: 0;
-  pointer-events: none;
+  display: none;
 }
 
 .skeleton-spinner {

@@ -119,7 +119,7 @@ export function ensureMap() {
   map = new maplibregl.Map({
     container: "map",
     style: styleCandidates[0],
-    center: [-97.74, 30.30],
+    center: [-97.74, 30.27],  // Centered over downtown Austin
     zoom: 12.2,
     pitch: 0,
     attributionControl: false,

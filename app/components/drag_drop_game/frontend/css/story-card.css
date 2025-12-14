@@ -55,7 +55,7 @@
   font-size: 14px;
 }
 
-/* Header grade display (shown during results) */
+/* Header grade display (shown during results, pushed to right) */
 .headerGrade {
   display: none;
   align-items: center;
@@ -67,6 +67,7 @@
   background: rgba(34,197,94,0.12);
   color: #16a34a;
   min-width: 50px;
+  margin-left: auto;  /* Push to the right */
 }
 
 .headerGrade.visible {

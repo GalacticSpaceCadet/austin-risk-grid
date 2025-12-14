@@ -50,8 +50,15 @@
 
 /* Map container inside pane */
 .map-pane > div:first-child {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
+}
+
+/* Ensure pane label doesn't block map interaction */
+.map-pane .pane-label {
+  pointer-events: none;
 }
 
 /* Divider between panes */
