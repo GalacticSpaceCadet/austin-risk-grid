@@ -105,7 +105,181 @@ const els = {
   mLift: document.getElementById("mLift"),
   mWindow: document.getElementById("mWindow"),
   mIncidents: document.getElementById("mIncidents"),
+  // Loading & feedback elements
+  mapSkeleton: document.getElementById("map-skeleton"),
+  mapError: document.getElementById("map-error"),
+  mapErrorMessage: document.getElementById("map-error-message"),
+  mapRetryBtn: document.getElementById("map-retry-btn"),
+  toastContainer: document.getElementById("toast-container"),
 };
+
+// --- Toast Notification System ---
+function createToastIcon(type) {
+  const icons = {
+    success: `<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5">
+      <path d="M20 6L9 17l-5-5"/>
+    </svg>`,
+    error: `<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="15" y1="9" x2="9" y2="15"/>
+      <line x1="9" y1="9" x2="15" y2="15"/>
+    </svg>`,
+    info: `<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2.5">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="12" y1="16" x2="12" y2="12"/>
+      <line x1="12" y1="8" x2="12.01" y2="8"/>
+    </svg>`,
+  };
+  return icons[type] || icons.info;
+}
+
+function showToast(message, type = "info", duration = 2000, action = null) {
+  const toast = document.createElement("div");
+  toast.className = `toast toast-${type}`;
+
+  let actionHtml = "";
+  if (action && action.label) {
+    actionHtml = `<button class="toast-action">${action.label}</button>`;
+  }
+
+  toast.innerHTML = `
+    ${createToastIcon(type)}
+    <span class="toast-message">${message}</span>
+    ${actionHtml}
+  `;
+
+  els.toastContainer.appendChild(toast);
+
+  // Bind action handler
+  if (action && action.onClick) {
+    const btn = toast.querySelector(".toast-action");
+    if (btn) {
+      btn.addEventListener("click", () => {
+        action.onClick();
+        removeToast(toast);
+      });
+    }
+  }
+
+  // Trigger show animation
+  requestAnimationFrame(() => {
+    toast.classList.add("show");
+  });
+
+  // Auto-dismiss
+  if (duration > 0) {
+    setTimeout(() => removeToast(toast), duration);
+  }
+
+  return toast;
+}
+
+function removeToast(toast) {
+  toast.classList.remove("show");
+  setTimeout(() => {
+    if (toast.parentNode) {
+      toast.parentNode.removeChild(toast);
+    }
+  }, 300);
+}
+
+// --- Loading State Management ---
+function showMapLoading() {
+  if (els.mapSkeleton) {
+    els.mapSkeleton.classList.remove("hidden");
+  }
+}
+
+function hideMapLoading() {
+  if (els.mapSkeleton) {
+    els.mapSkeleton.classList.add("hidden");
+  }
+}
+
+function showMapError(message) {
+  hideMapLoading();
+  if (els.mapError) {
+    els.mapError.classList.remove("hidden");
+    if (els.mapErrorMessage) {
+      els.mapErrorMessage.textContent = message;
+    }
+  }
+}
+
+function hideMapError() {
+  if (els.mapError) {
+    els.mapError.classList.add("hidden");
+  }
+}
+
+// --- Animation Functions ---
+function animateMarkerPlacement(unitId) {
+  const marker = markers.get(unitId);
+  if (!marker) return;
+
+  const el = marker.getElement();
+  if (!el) return;
+
+  // Pulse animation on marker
+  el.classList.add("pulse");
+  setTimeout(() => el.classList.remove("pulse"), 400);
+
+  // Ripple effect
+  const ripple = document.createElement("div");
+  ripple.className = "marker-ripple";
+  el.style.position = "relative";
+  el.appendChild(ripple);
+  setTimeout(() => {
+    if (ripple.parentNode) ripple.parentNode.removeChild(ripple);
+  }, 600);
+}
+
+function animateUnitCardSuccess(unitId) {
+  const unitCard = document.querySelector(`.unit[data-unit-id="${unitId}"]`);
+  if (!unitCard) return;
+
+  unitCard.classList.add("placed-success");
+  setTimeout(() => unitCard.classList.remove("placed-success"), 500);
+}
+
+// --- Retry Functions ---
+function retryMapLoad() {
+  hideMapError();
+  showMapLoading();
+
+  // Destroy existing map if any
+  if (map) {
+    map.remove();
+    map = null;
+    deckOverlay = null;
+    markers.clear();
+  }
+
+  ensureMap();
+}
+
+function retryDeckOverlay() {
+  if (!map || !window.deck) {
+    showToast("Cannot initialize overlay - map or deck.gl unavailable", "error", 3000);
+    return;
+  }
+
+  try {
+    const { MapboxOverlay } = deck;
+    deckOverlay = new MapboxOverlay({ interleaved: true, layers: [] });
+    map.addControl(deckOverlay);
+    refreshDeckLayers();
+    showToast("Risk overlay restored", "success");
+    els.hudRight.textContent = "Drag 4 units onto the map";
+  } catch (e) {
+    showToast("Failed to initialize overlay", "error", 3000);
+  }
+}
+
+// Wire up retry button
+if (els.mapRetryBtn) {
+  els.mapRetryBtn.addEventListener("click", retryMapLoad);
+}
 
 function emitValue(payload) {
   postMessageToStreamlit({
@@ -127,12 +301,16 @@ function upsertPlacement(id, lat, lon) {
 }
 
 function resetPlacements() {
+  const hadPlacements = state.placements.length > 0;
   state.placements = [];
   // remove markers
   for (const [, m] of markers) m.remove();
   markers.clear();
   updateBay();
   emitValue({ type: "reset", placements: state.placements, mode: state.mode });
+  if (hadPlacements) {
+    showToast("All placements cleared", "info", 2000);
+  }
 }
 
 function updateMode(mode) {
@@ -209,8 +387,9 @@ function ensureMap() {
   if (map) return;
 
   if (!window.maplibregl) {
+    showMapError("MapLibre library failed to load. Check your network connection.");
     els.hudLeft.textContent = "Map failed to load";
-    els.hudRight.textContent = "MapLibre script didn’t load (network/CSP).";
+    els.hudRight.textContent = "MapLibre script didn't load (network/CSP).";
     return;
   }
 
@@ -220,6 +399,8 @@ function ensureMap() {
     "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
     "https://demotiles.maplibre.org/style.json",
   ];
+
+  let styleAttempt = 0;
 
   map = new maplibregl.Map({
     container: "map",
@@ -232,22 +413,40 @@ function ensureMap() {
 
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
   map.on("error", (e) => {
+    console.warn("Map error:", e);
+    styleAttempt++;
     // If the style fails to load, attempt a simple fallback style.
-    try {
-      if (map && map.getStyle && map.getStyle() && map.getStyle().sprite) {
-        // already has a style; ignore
-        return;
+    if (styleAttempt < styleCandidates.length) {
+      try {
+        if (map && map.getStyle && map.getStyle() && map.getStyle().sprite) {
+          // already has a style; ignore
+          return;
+        }
+        map.setStyle(styleCandidates[styleAttempt]);
+      } catch (_) {
+        showMapError("Map style failed to load after multiple attempts.");
+        showToast("Map style unavailable", "error", 3000, {
+          label: "Retry",
+          onClick: retryMapLoad,
+        });
       }
-      map.setStyle(styleCandidates[1]);
-    } catch (_) {
-      // ignore
+    } else if (styleAttempt === styleCandidates.length) {
+      // All styles failed
+      showMapError("Map style failed to load after multiple attempts.");
+      showToast("Map style unavailable", "error", 3000, {
+        label: "Retry",
+        onClick: retryMapLoad,
+      });
     }
   });
 
   // deck.gl overlay for heatmap + hotspots
   map.on("load", () => {
+    hideMapLoading();
+    hideMapError();
+
     try {
-      if (!window.deck) throw new Error("deck.gl script didn’t load");
+      if (!window.deck) throw new Error("deck.gl script didn't load");
       const { MapboxOverlay } = deck;
       deckOverlay = new MapboxOverlay({ interleaved: true, layers: [] });
       map.addControl(deckOverlay);
@@ -255,7 +454,11 @@ function ensureMap() {
     } catch (e) {
       // If deck.gl overlay fails (CDN blocked, etc), we still keep the map.
       console.warn("Deck overlay init failed", e);
-      els.hudRight.textContent = "Risk overlay unavailable (deck.gl didn’t load).";
+      els.hudRight.textContent = "Risk overlay unavailable (deck.gl didn't load).";
+      showToast("Risk overlay unavailable", "error", 4000, {
+        label: "Retry",
+        onClick: retryDeckOverlay,
+      });
     }
   });
 
@@ -281,9 +484,15 @@ function ensureMap() {
     const y = clamp(e.clientY - rect.top, 0, rect.height);
     const lngLat = map.unproject([x, y]);
 
+    const isNewPlacement = !placementById(unitId);
     upsertPlacement(unitId, lngLat.lat, lngLat.lng);
     placeOrMoveMarker(unitId, lngLat.lat, lngLat.lng);
     updateBay();
+
+    // Trigger animations and toast
+    animateMarkerPlacement(unitId);
+    animateUnitCardSuccess(unitId);
+    showToast(`Unit ${unitId} ${isNewPlacement ? "placed" : "moved"} successfully`, "success", 2000);
 
     emitValue({
       type: "drop",
@@ -405,11 +614,20 @@ els.mode.addEventListener("change", (e) => {
 });
 
 els.deploy.addEventListener("click", () => {
+  const placedCount = state.placements.length;
+
+  if (placedCount === 0) {
+    showToast("No units placed. Drag units onto the map first.", "error", 2500);
+    return;
+  }
+
   emitValue({
     type: "deploy",
     placements: state.placements,
     mode: state.mode,
   });
+
+  showToast(`Deployed ${placedCount} unit${placedCount !== 1 ? "s" : ""} successfully`, "success", 2000);
 });
 
 els.reset.addEventListener("click", () => resetPlacements());

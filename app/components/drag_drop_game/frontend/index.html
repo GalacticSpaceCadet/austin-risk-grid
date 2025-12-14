@@ -390,6 +390,225 @@
           grid-template-columns: 1fr;
         }
       }
+
+      /* ========== Loading States ========== */
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+
+      .skeleton-map {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--bg);
+        z-index: 3;
+        transition: opacity 0.3s ease-out;
+        border-radius: var(--radius);
+      }
+
+      .skeleton-map.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .skeleton-spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid rgba(15, 23, 42, 0.1);
+        border-top-color: var(--accent);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+
+      /* ========== Toast Notifications ========== */
+      .toast-container {
+        position: fixed;
+        top: 16px;
+        right: 16px;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        pointer-events: none;
+      }
+
+      .toast {
+        pointer-events: auto;
+        padding: 12px 16px;
+        border-radius: var(--radius-sm);
+        background: var(--panel);
+        border: 1px solid var(--border);
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.15);
+        backdrop-filter: blur(12px);
+        font-size: 13px;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        max-width: 320px;
+        transform: translateX(120%);
+        opacity: 0;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                    opacity 0.3s ease;
+      }
+
+      .toast.show {
+        transform: translateX(0);
+        opacity: 1;
+      }
+
+      .toast.toast-success {
+        border-left: 3px solid var(--good);
+      }
+
+      .toast.toast-error {
+        border-left: 3px solid var(--accent);
+      }
+
+      .toast.toast-info {
+        border-left: 3px solid #3b82f6;
+      }
+
+      .toast-icon {
+        width: 18px;
+        height: 18px;
+        flex-shrink: 0;
+      }
+
+      .toast-message {
+        flex: 1;
+      }
+
+      .toast-action {
+        padding: 6px 10px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.8);
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.15s ease;
+      }
+
+      .toast-action:hover {
+        background: rgba(255, 255, 255, 1);
+      }
+
+      /* ========== Marker Animations ========== */
+      @keyframes marker-pulse {
+        0% { transform: scale(1); box-shadow: 0 12px 22px rgba(0,0,0,0.45); }
+        50% { transform: scale(1.15); box-shadow: 0 14px 28px rgba(255,59,48,0.4); }
+        100% { transform: scale(1); box-shadow: 0 12px 22px rgba(0,0,0,0.45); }
+      }
+
+      @keyframes marker-ripple {
+        0% {
+          transform: scale(1);
+          opacity: 0.6;
+        }
+        100% {
+          transform: scale(2.5);
+          opacity: 0;
+        }
+      }
+
+      .marker.pulse {
+        animation: marker-pulse 0.4s ease-out;
+      }
+
+      .marker-ripple {
+        position: absolute;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: rgba(255, 59, 48, 0.4);
+        pointer-events: none;
+        animation: marker-ripple 0.6s ease-out forwards;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
+
+      /* Unit card success flash */
+      @keyframes unit-success {
+        0% { background: rgba(255, 255, 255, 0.78); }
+        30% { background: rgba(34, 197, 94, 0.25); }
+        100% { background: rgba(255, 255, 255, 0.78); }
+      }
+
+      .unit.placed-success {
+        animation: unit-success 0.5s ease-out;
+      }
+
+      /* ========== Error Overlay ========== */
+      .error-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(246, 247, 251, 0.95);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        z-index: 10;
+        backdrop-filter: blur(4px);
+        border-radius: var(--radius);
+      }
+
+      .error-overlay.hidden {
+        display: none;
+      }
+
+      .error-icon {
+        width: 48px;
+        height: 48px;
+        color: var(--accent);
+      }
+
+      .error-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text);
+      }
+
+      .error-message {
+        font-size: 13px;
+        color: var(--muted);
+        text-align: center;
+        max-width: 280px;
+      }
+
+      .error-btn {
+        padding: 10px 20px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: var(--panel);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.15s ease, transform 0.1s ease;
+      }
+
+      .error-btn:hover {
+        background: rgba(255, 255, 255, 1);
+      }
+
+      .error-btn:active {
+        transform: scale(0.98);
+      }
+
+      .error-btn-primary {
+        background: linear-gradient(180deg, rgba(239,68,68,0.92) 0%, rgba(239,68,68,0.82) 100%);
+        color: white;
+        border-color: rgba(239, 68, 68, 0.25);
+      }
+
+      .error-btn-primary:hover {
+        filter: brightness(1.05);
+        background: linear-gradient(180deg, rgba(239,68,68,0.92) 0%, rgba(239,68,68,0.82) 100%);
+      }
     </style>
   </head>
 
@@ -399,6 +618,23 @@
         <div class="left">
           <div class="card mapCard">
             <div id="map"></div>
+            <!-- Loading spinner -->
+            <div id="map-skeleton" class="skeleton-map">
+              <div class="skeleton-spinner"></div>
+            </div>
+            <!-- Error overlay -->
+            <div id="map-error" class="error-overlay hidden">
+              <svg class="error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              <div class="error-title">Map failed to load</div>
+              <div id="map-error-message" class="error-message">
+                Unable to load map style. Check your network connection.
+              </div>
+              <button id="map-retry-btn" class="error-btn error-btn-primary">Retry</button>
+            </div>
             <div class="mapTitleWrap">
               <div class="mapTitle">Austin</div>
             </div>
@@ -472,6 +708,9 @@
         </div>
       </div>
     </div>
+
+    <!-- Toast notification container -->
+    <div id="toast-container" class="toast-container"></div>
 
     <!-- External libs (runtime CDN). This avoids a frontend build pipeline. -->
     <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
