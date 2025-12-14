@@ -1,0 +1,157 @@
+/* Map markers, ambulance SVG, and popups */
+
+/* map marker - ambulance icon */
+.mapAmbulanceMarker {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  filter: drop-shadow(0 6px 12px rgba(0,0,0,0.35));
+  cursor: grab;
+  user-select: none;
+  pointer-events: auto !important;
+  z-index: 10;
+  touch-action: none;
+  /* No transitions - markers must be rock solid during map interactions */
+}
+
+.mapAmbulanceMarker:hover {
+  filter: drop-shadow(0 8px 16px rgba(0,0,0,0.45)) brightness(1.05);
+}
+
+.mapAmbulanceMarker:active,
+.mapAmbulanceMarker.dragging {
+  cursor: grabbing;
+  opacity: 0.35;
+}
+
+/* Ensure marker wrapper has no transforms that could interfere */
+.maplibregl-marker {
+  /* MapLibre handles positioning via transform - don't add any transitions */
+  will-change: transform;
+}
+
+/* Only animate when explicitly requested via class */
+.maplibregl-marker.animate-move {
+  transition: transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Ensure SVG inside marker doesn't scale unexpectedly */
+.mapAmbulanceMarker .ambulanceSvg {
+  width: 48px;
+  height: 48px;
+  display: block;
+  flex-shrink: 0;
+}
+
+.mapAmbulanceMarker .markerBadge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(59, 130, 246, 0.95);
+  border: 2px solid white;
+  color: white;
+  font-size: 10px;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+
+/* AI ambulance markers - purple/violet color scheme */
+.mapAmbulanceMarker.ai-marker {
+  pointer-events: none;
+  cursor: default;
+}
+
+.mapAmbulanceMarker.ai-marker .markerBadge {
+  background: rgba(139, 92, 246, 0.95);
+}
+
+.mapAmbulanceMarker.ai-marker .ambulanceSvg rect[fill="url(#g)"] {
+  fill: rgba(139, 92, 246, 0.2);
+}
+
+/* Ambulance popup tooltip */
+.ambulance-popup {
+  z-index: 100 !important;
+  pointer-events: none;
+}
+
+.ambulance-popup .maplibregl-popup-content {
+  background: rgba(15, 23, 42, 0.95);
+  color: white;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 12px;
+  line-height: 1.5;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  border: 1px solid rgba(255,255,255,0.15);
+  backdrop-filter: blur(8px);
+}
+
+.ambulance-popup .maplibregl-popup-tip {
+  border-top-color: rgba(15, 23, 42, 0.95);
+}
+
+.popup-content strong {
+  font-size: 13px;
+  color: rgba(147, 197, 253, 1);
+}
+
+.popup-label {
+  color: rgba(148, 163, 184, 1);
+}
+
+/* legacy marker style (for hotspots) */
+.marker {
+  width: 34px;
+  height: 34px;
+  border-radius: 18px;
+  background: rgba(255,59,48,0.95);
+  border: 2px solid rgba(255,255,255,0.85);
+  box-shadow: 0 12px 22px rgba(0,0,0,0.45);
+  display: grid;
+  place-items: center;
+  color: white;
+  font-weight: 900;
+  font-size: 14px;
+  user-select: none;
+}
+
+/* Marker Animations */
+@keyframes marker-pulse {
+  0% { transform: scale(1); filter: drop-shadow(0 6px 12px rgba(0,0,0,0.35)); }
+  50% { transform: scale(1.1); filter: drop-shadow(0 8px 16px rgba(59,130,246,0.4)); }
+  100% { transform: scale(1); filter: drop-shadow(0 6px 12px rgba(0,0,0,0.35)); }
+}
+
+@keyframes marker-ripple {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+.mapAmbulanceMarker.pulse {
+  animation: marker-pulse 0.4s ease-out;
+}
+
+.marker-ripple {
+  position: absolute;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(59, 130, 246, 0.4);
+  pointer-events: none;
+  animation: marker-ripple 0.6s ease-out forwards;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}

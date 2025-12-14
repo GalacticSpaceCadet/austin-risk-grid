@@ -1,0 +1,45 @@
+/* Button styles */
+.btn {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(134, 199, 172, 0.5);
+  background: linear-gradient(180deg, rgba(167,215,195,0.95) 0%, rgba(134,199,172,0.92) 100%);
+  color: rgba(30, 70, 50, 0.95);
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  user-select: none;
+  box-shadow: 0 8px 20px rgba(134, 199, 172, 0.25);
+  transition: all 150ms ease;
+}
+
+.btn:hover:not(:disabled) {
+  filter: brightness(1.04);
+  transform: translateY(-1px);
+  box-shadow: 0 12px 28px rgba(134, 199, 172, 0.35);
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  background: linear-gradient(180deg, rgba(203,213,225,0.7) 0%, rgba(186,199,212,0.65) 100%);
+  border-color: rgba(186,199,212,0.4);
+  color: rgba(100,116,139,0.8);
+  box-shadow: none;
+}
+
+.btnSecondary {
+  margin-top: 10px;
+  background: rgba(255, 255, 255, 0.90);
+  color: rgba(15, 23, 42, 0.88);
+  border-color: var(--border);
+  box-shadow: none;
+}
+
+.btnSecondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 1);
+  transform: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
