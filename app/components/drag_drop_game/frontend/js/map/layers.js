@@ -100,13 +100,11 @@ export function refreshDeckLayers() {
   const state = getState();
   const heatData = Array.isArray(state.risk_grid) ? state.risk_grid : [];
   const hotspotData = Array.isArray(state.hotspots) ? state.hotspots : [];
-  const gridLines = generateGridLines();
 
-  const gridLayer = createGridLayer(gridLines);
   const heatLayer = createHeatmapLayer(heatData);
   const hotspotLayer = createHotspotLayer(hotspotData);
   const textLayer = createTextLayer(hotspotData);
 
-  // Grid first (bottom), then heat, then hotspots on top
-  deckOverlay.setProps({ layers: [gridLayer, heatLayer, hotspotLayer, textLayer] });
+  // Heatmap first (bottom), then hotspots on top
+  deckOverlay.setProps({ layers: [heatLayer, hotspotLayer, textLayer] });
 }
