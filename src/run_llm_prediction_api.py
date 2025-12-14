@@ -4,6 +4,7 @@ Extracted from run_llm_prediction.py for use in Streamlit dashboard.
 """
 
 import logging
+import random
 import pandas as pd
 from datetime import datetime
 from typing import Dict, List, Optional
@@ -20,6 +21,14 @@ from src.optimize_ambulance_placement import optimize_placement, calculate_cover
 # Configure logging
 logger = logging.getLogger(__name__)
 
+# Austin bounding box for random coordinate generation
+AUSTIN_BOUNDS = {
+    "lat_min": 30.10,
+    "lat_max": 30.55,
+    "lon_min": -97.95,
+    "lon_max": -97.55,
+}
+
 
 def load_enriched_data(data_path: str = "data/raw/traffic_incidents_enriched.parquet") -> pd.DataFrame:
     """Load enriched incident data."""
@@ -35,7 +44,8 @@ def run_llm_prediction(
     num_ambulances: int,
     coverage_radius: float = 5.0,
     decay_function: str = "linear",
-    data_path: str = "data/raw/traffic_incidents_enriched.parquet"
+    data_path: str = "data/raw/traffic_incidents_enriched.parquet",
+    use_llm: bool = False
 ) -> Dict:
     """
     Run LLM prediction and optimize ambulance placement.
@@ -46,18 +56,49 @@ def run_llm_prediction(
         coverage_radius: Coverage radius in kilometers (default: 5.0)
         decay_function: Distance decay function type - "linear" or "exponential" (default: "linear")
         data_path: Path to enriched incidents parquet file
+        use_llm: If True, use LLM prediction. If False (default), return random coordinates within Austin bounds
         
     Returns:
         Dictionary with:
         - "optimal_ambulance_locations": List of {"lat": float, "lon": float} dicts
-        - "predicted_incidents": List of predicted incidents with lat, lon, weight
-        - "coverage_score": float
+        - "predicted_incidents": List of predicted incidents with lat, lon, weight (empty if use_llm=False)
+        - "coverage_score": float (0.0 if use_llm=False)
         - "metadata": Dict with additional info
         
     Raises:
-        ValueError: If no incidents found in slice or prediction fails
-        Exception: If LLM call fails
+        ValueError: If no incidents found in slice or prediction fails (only when use_llm=True)
+        Exception: If LLM call fails (only when use_llm=True)
     """
+    if not use_llm:
+        logger.info(f"Skipping LLM prediction, generating {num_ambulances} random coordinates within Austin bounds")
+        
+        # Generate random coordinates within Austin bounding box
+        random_locations = []
+        for i in range(num_ambulances):
+            lat = random.uniform(AUSTIN_BOUNDS["lat_min"], AUSTIN_BOUNDS["lat_max"])
+            lon = random.uniform(AUSTIN_BOUNDS["lon_min"], AUSTIN_BOUNDS["lon_max"])
+            random_locations.append({"lat": lat, "lon": lon})
+        
+        result = {
+            "predicted_incidents": [],
+            "optimal_ambulance_locations": random_locations,
+            "coverage_score": 0.0,
+            "metadata": {
+                "input_3hour_slice_start": start_time.isoformat() if isinstance(start_time, pd.Timestamp) else pd.to_datetime(start_time).isoformat(),
+                "input_3hour_slice_end": (pd.to_datetime(start_time) + pd.Timedelta(hours=3)).isoformat(),
+                "year_prior_date": None,
+                "num_ambulances": num_ambulances,
+                "coverage_radius_km": coverage_radius,
+                "decay_function": decay_function,
+                "total_predicted_incidents": 0,
+                "optimization_method": "random",
+                "use_llm": False
+            }
+        }
+        
+        logger.info(f"Generated {len(random_locations)} random ambulance locations")
+        return result
+    
     logger.info(f"Starting LLM prediction: start_time={start_time}, num_ambulances={num_ambulances}, "
                 f"coverage_radius={coverage_radius}km, decay_function={decay_function}")
     

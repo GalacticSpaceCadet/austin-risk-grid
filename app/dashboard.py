@@ -5,6 +5,7 @@ Now with scenario-specific data loading.
 
 import json
 import logging
+import os
 import random
 from datetime import datetime, timezone
 from pathlib import Path
@@ -22,6 +23,9 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+# Check for USE_LLM environment variable (defaults to False, so LLM is skipped by default)
+USE_LLM = os.getenv("USE_LLM", "").lower() in ("true", "1", "yes")
 
 
 SCENARIOS_DIR = Path("outputs/scenarios")
@@ -437,13 +441,18 @@ def main():
                 
                 # Run LLM prediction
                 try:
-                    with st.spinner(f"Running AI prediction for {ambulance_count} ambulances..."):
-                        logger.info(f"Starting LLM prediction for scenario '{scenario_id_from_event}' with {ambulance_count} ambulances")
+                    spinner_text = f"Generating random placements for {ambulance_count} ambulances..." if not USE_LLM else f"Running AI prediction for {ambulance_count} ambulances..."
+                    with st.spinner(spinner_text):
+                        if not USE_LLM:
+                            logger.info(f"Generating random placements for scenario '{scenario_id_from_event}' with {ambulance_count} ambulances (LLM skipped)")
+                        else:
+                            logger.info(f"Starting LLM prediction for scenario '{scenario_id_from_event}' with {ambulance_count} ambulances")
                         result = run_llm_prediction(
                             start_time=target_datetime,
                             num_ambulances=ambulance_count,
                             coverage_radius=5.0,
-                            decay_function="linear"
+                            decay_function="linear",
+                            use_llm=USE_LLM
                         )
                         st.session_state.ai_ambulance_locations = result["optimal_ambulance_locations"]
                         logger.info(f"LLM prediction successful: {len(result['optimal_ambulance_locations'])} locations returned")
