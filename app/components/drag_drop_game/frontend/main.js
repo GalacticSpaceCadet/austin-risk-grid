@@ -19,19 +19,92 @@ import { initPlacementToggle } from './js/ui/placementToggle.js';
 import { initHistoryPanel } from './js/ui/historyPanel.js';
 import { setUpdateBayCallback } from './js/core/history.js';
 import { setUpdateBayCallbackPresets } from './js/core/presets.js';
+import { showAIPlacements } from './js/game/ai.js';
 
 // Hydrate state from Streamlit args
 function hydrateFromArgs(args) {
+  const currentState = getState();
+  // Preserve existing placements if args provides empty array but we have existing placements
+  // This prevents clearing user placements when component rerenders after AI prediction
+  // The backend should preserve placements in session state, so empty array likely means
+  // component just initialized, not that we should clear existing placements
+  let placementsToUse = [];
+  if (Array.isArray(args.placements)) {
+    if (args.placements.length > 0) {
+      // Use provided placements
+      placementsToUse = args.placements;
+    } else if (currentState.placements && currentState.placements.length > 0) {
+      // Preserve existing placements if args provides empty array
+      console.log('Preserving existing placements:', currentState.placements.length);
+      placementsToUse = currentState.placements;
+    }
+  } else if (currentState.placements && currentState.placements.length > 0) {
+    // Preserve existing placements if args doesn't provide placements at all
+    console.log('Preserving existing placements (args not provided):', currentState.placements.length);
+    placementsToUse = currentState.placements;
+  }
+  
+  if (placementsToUse.length > 0) {
+    console.log('Using placements:', placementsToUse.length);
+  }
+  
   updateState({
     risk_grid: Array.isArray(args.risk_grid) ? args.risk_grid : [],
     hotspots: Array.isArray(args.hotspots) ? args.hotspots : [],
     metrics: args.metrics || {},
-    placements: Array.isArray(args.placements) ? args.placements : [],
+    placements: placementsToUse,
   });
 
   // Store scenario data from backend for client-side switching
   if (args.all_scenario_data && typeof args.all_scenario_data === 'object') {
     updateState({ allScenarioData: args.all_scenario_data });
+  }
+
+  // Update AI ambulance locations from backend
+  if (Array.isArray(args.ai_ambulance_locations)) {
+    const currentState = getState();
+    const wasLoading = currentState.aiPredictionLoading;
+    const hasNewLocations = args.ai_ambulance_locations.length > 0;
+    
+    console.log('AI locations received from backend', {
+      locationCount: args.ai_ambulance_locations.length,
+      wasLoading: wasLoading,
+      currentLocations: currentState.aiAmbulanceLocations ? currentState.aiAmbulanceLocations.length : 0
+    });
+    
+    updateState({ 
+      aiAmbulanceLocations: args.ai_ambulance_locations,
+      aiPredictionLoading: false // Clear loading state when results arrive
+    });
+    
+    // Show AI placements if we have new locations
+    // Always try to show if we have locations (they might have changed)
+    if (hasNewLocations) {
+      // Delay to ensure state is updated and map is ready
+      // Use a longer delay to ensure map is fully initialized
+      setTimeout(() => {
+        const state = getState();
+        const map = getMap();
+        // Double-check we still have locations and map is ready
+        if (state.aiAmbulanceLocations && state.aiAmbulanceLocations.length > 0) {
+          if (map) {
+            console.log('Calling showAIPlacements with', state.aiAmbulanceLocations.length, 'locations, map ready');
+            showAIPlacements();
+          } else {
+            console.warn('Map not ready, retrying showAIPlacements in 200ms');
+            setTimeout(() => {
+              if (getMap()) {
+                showAIPlacements();
+              } else {
+                console.error('Map still not ready after retry');
+              }
+            }, 200);
+          }
+        } else {
+          console.warn('showAIPlacements not called - no locations in state');
+        }
+      }, 200);
+    }
   }
 
   // Update current scenario if provided
@@ -49,9 +122,13 @@ function hydrateFromArgs(args) {
   updateDeployButton();
 
   // Apply placements after map is ready
-  const state = getState();
-  applyPlacementsFromArgs(state.placements);
-  refreshDeckLayers();
+  // Use a small delay to ensure state is fully updated and map is initialized
+  setTimeout(() => {
+    const state = getState();
+    // Always apply placements to ensure markers are on the map
+    applyPlacementsFromArgs(state.placements || []);
+    refreshDeckLayers();
+  }, 50);
 
   setFrameHeight();
 }

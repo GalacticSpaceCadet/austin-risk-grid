@@ -76,6 +76,8 @@ export function resetPlacements(skipHistory = false) {
     placements: [],
     aiPlacements: [],
     showingAI: false,
+    aiAmbulanceLocations: [],
+    aiPredictionLoading: false,
   });
 
   // Record to history (only if there were placements to reset)

@@ -17,6 +17,9 @@ const _state = {
   history: [], // Array of history entries [{id, timestamp, action, description, placements, previousPlacements, unitId}]
   historyIndex: -1, // Current position in history (-1 = no history)
   maxHistorySize: 50, // Maximum entries to keep
+  // AI ambulance locations from LLM prediction
+  aiAmbulanceLocations: [], // [{lat: float, lon: float}] from backend
+  aiPredictionLoading: false, // Loading state for prediction
 };
 
 // Subscribers for reactive updates
