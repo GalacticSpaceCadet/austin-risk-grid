@@ -5,6 +5,7 @@ import { snapToGrid } from './placements.js';
 import { placeAIMarker } from '../map/markers.js';
 import { showScoringPanel, updateDeployButton } from '../ui/story.js';
 import { emitValue } from '../streamlit/protocol.js';
+import { calculateRealTimeScores, calculateOptimalPlacements } from './scoring.js';
 
 export function generateRandomAIPlacements() {
   const state = getState();
@@ -64,8 +65,8 @@ export function calculatePlaceholderScores() {
 export function showAIPlacements() {
   const state = getState();
 
-  // Generate AI placements (random for now, will integrate with backend later)
-  const aiPlacements = generateRandomAIPlacements();
+  // Use real optimal placements based on hotspot risk scores
+  const aiPlacements = calculateOptimalPlacements();
   updateState({
     aiPlacements: aiPlacements,
     showingAI: true,
@@ -76,8 +77,40 @@ export function showAIPlacements() {
     placeAIMarker(p.id, p.lat, p.lon);
   }
 
-  // Calculate and show scores
-  const scores = calculatePlaceholderScores();
+  // Calculate real scores using scoring module
+  const realScores = calculateRealTimeScores();
+
+  // Convert to format expected by showScoringPanel
+  const diff = realScores.playerScore - realScores.aiScore;
+  let grade, gradeClass, feedback;
+
+  if (diff >= 5) {
+    grade = "A";
+    gradeClass = "good";
+    feedback = "Excellent work! Your positioning outperformed the AI's recommendations. You identified high-risk areas effectively.";
+  } else if (diff >= -5) {
+    grade = "B+";
+    gradeClass = "good";
+    feedback = "Great job! Your placements are competitive with the AI's optimal positioning based on risk scores.";
+  } else if (diff >= -15) {
+    grade = "B";
+    gradeClass = "okay";
+    feedback = "Good effort! The AI found some additional coverage. Consider positioning closer to the highest-risk hotspots.";
+  } else {
+    grade = "C";
+    gradeClass = "poor";
+    feedback = "Room for improvement. Try focusing on the red zones with the highest risk scores.";
+  }
+
+  const scores = {
+    playerScore: realScores.playerScore,
+    aiScore: realScores.aiScore,
+    coverage: realScores.placementScore,
+    grade,
+    gradeClass,
+    feedback,
+  };
+
   showScoringPanel(scores);
 
   updateDeployButton();
