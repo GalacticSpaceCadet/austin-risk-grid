@@ -1,27 +1,108 @@
 """
 Game UI (Phase 6+): True drag-and-drop ambulance staging.
+Now with scenario-specific data loading.
 """
 
 import json
 import random
 from datetime import datetime, timezone
+from pathlib import Path
 
 import streamlit as st
 
 from components.drag_drop_game import drag_drop_game
 
 
+SCENARIOS_DIR = Path("outputs/scenarios")
+
+
 def _fmt_t_bucket(dt: datetime) -> str:
-    # Match the project’s existing output format.
+    # Match the project's existing output format.
     return dt.astimezone(timezone.utc).strftime("%Y-%m-%d %H:00:00+00:00")
 
 
-def build_demo_outputs(n_points: int = 2500) -> tuple[list[dict], list[dict], dict]:
+def load_scenario_data(scenario_id: str) -> tuple[list, list, dict]:
     """
-    Lightweight demo dataset so the UI can run even when `outputs/*_latest.json`
-    files are not present (e.g., on a fresh clone or when outputs are gitignored).
+    Load risk grid and hotspots for a specific scenario.
+    
+    Args:
+        scenario_id: The scenario ID (e.g., 'sxsw', 'acl', 'default')
+        
+    Returns:
+        Tuple of (risk_grid, hotspots, metrics)
     """
-    random.seed(42)
+    grid_path = SCENARIOS_DIR / f"{scenario_id}_risk_grid.json"
+    hotspot_path = SCENARIOS_DIR / f"{scenario_id}_hotspots.json"
+    
+    risk_grid = None
+    hotspots = None
+    metrics = {}
+    
+    try:
+        if grid_path.exists():
+            with open(grid_path, 'r') as f:
+                risk_grid = json.load(f)
+    except (json.JSONDecodeError, IOError) as e:
+        st.warning(f"Could not load risk grid for {scenario_id}: {e}")
+    
+    try:
+        if hotspot_path.exists():
+            with open(hotspot_path, 'r') as f:
+                hotspots = json.load(f)
+    except (json.JSONDecodeError, IOError) as e:
+        st.warning(f"Could not load hotspots for {scenario_id}: {e}")
+    
+    # Load metrics if available
+    try:
+        metrics_path = SCENARIOS_DIR / f"{scenario_id}_metrics.json"
+        if metrics_path.exists():
+            with open(metrics_path, 'r') as f:
+                metrics = json.load(f)
+    except (json.JSONDecodeError, IOError):
+        pass
+    
+    return risk_grid, hotspots, metrics
+
+
+def get_available_scenarios() -> list[str]:
+    """Get list of scenarios that have data files."""
+    if not SCENARIOS_DIR.exists():
+        return []
+    
+    # Look for *_risk_grid.json files
+    scenarios = []
+    for f in SCENARIOS_DIR.glob("*_risk_grid.json"):
+        scenario_id = f.stem.replace("_risk_grid", "")
+        scenarios.append(scenario_id)
+    
+    return sorted(scenarios)
+
+
+def load_all_scenario_data() -> dict[str, tuple[list, list, dict]]:
+    """
+    Pre-load all scenario data into memory for fast switching.
+    
+    Returns:
+        Dict mapping scenario_id -> (risk_grid, hotspots, metrics)
+    """
+    all_data = {}
+    
+    for scenario_id in get_available_scenarios():
+        risk_grid, hotspots, metrics = load_scenario_data(scenario_id)
+        if risk_grid is not None and hotspots is not None:
+            all_data[scenario_id] = (risk_grid, hotspots, metrics)
+    
+    return all_data
+
+
+def build_demo_outputs(n_points: int = 2500, scenario_id: str = "default") -> tuple[list[dict], list[dict], dict]:
+    """
+    Lightweight demo dataset so the UI can run even when scenario data
+    files are not present.
+    
+    Different scenarios get slightly different synthetic patterns.
+    """
+    random.seed(hash(scenario_id) % 2**32)
     now = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
     t_bucket = _fmt_t_bucket(now)
 
@@ -29,13 +110,52 @@ def build_demo_outputs(n_points: int = 2500) -> tuple[list[dict], list[dict], di
     lat_min, lat_max = 30.17, 30.50
     lon_min, lon_max = -97.90, -97.60
 
-    # A few synthetic “centers” to create a believable heat pattern
-    centers = [
-        (30.2672, -97.7431, 1.6),  # downtown
-        (30.3072, -97.7550, 1.2),  # north central
-        (30.2300, -97.7400, 1.1),  # south central
-        (30.3500, -97.7000, 1.0),  # north east
-    ]
+    # Scenario-specific synthetic centers
+    scenario_centers = {
+        "default": [
+            (30.2672, -97.7431, 1.6),  # downtown
+            (30.3072, -97.7550, 1.2),  # north central
+            (30.2300, -97.7400, 1.1),  # south central
+        ],
+        "sxsw": [
+            (30.2672, -97.7431, 2.0),  # downtown - hot
+            (30.2656, -97.7388, 1.8),  # 6th street
+            (30.2595, -97.7370, 1.5),  # rainey
+            (30.2637, -97.7396, 1.6),  # convention center
+        ],
+        "acl": [
+            (30.2630, -97.7730, 2.2),  # zilker - hot
+            (30.2640, -97.7710, 1.8),  # barton springs
+            (30.2550, -97.7650, 1.4),  # south lamar
+        ],
+        "f1": [
+            (30.1346, -97.6358, 2.5),  # COTA - very hot
+            (30.1945, -97.6699, 1.5),  # airport
+            (30.2672, -97.7431, 1.0),  # downtown
+        ],
+        "ut_game": [
+            (30.2849, -97.7341, 2.0),  # UT campus
+            (30.2836, -97.7321, 1.8),  # stadium
+            (30.2880, -97.7450, 1.5),  # west campus
+        ],
+        "july4": [
+            (30.2614, -97.7510, 1.8),  # lady bird lake
+            (30.2595, -97.7505, 1.7),  # auditorium shores
+            (30.3000, -97.7400, 1.2),  # residential
+        ],
+        "halloween": [
+            (30.2656, -97.7388, 2.2),  # 6th street - hot
+            (30.2672, -97.7431, 1.5),  # downtown
+            (30.2880, -97.7450, 1.3),  # west campus
+        ],
+        "nye": [
+            (30.2672, -97.7431, 2.0),  # downtown
+            (30.2595, -97.7505, 1.6),  # auditorium shores
+            (30.2800, -97.7200, 1.2),  # highways
+        ],
+    }
+    
+    centers = scenario_centers.get(scenario_id, scenario_centers["default"])
 
     def gauss(lat: float, lon: float) -> float:
         score = 0.02
@@ -70,7 +190,7 @@ def build_demo_outputs(n_points: int = 2500) -> tuple[list[dict], list[dict], di
                 "lon": row["lon"],
                 "t_bucket": t_bucket,
                 "risk_score": row["risk_score"],
-                "reason": "Demo hotspot (synthetic data)",
+                "reason": f"Demo hotspot for {scenario_id} (synthetic data)",
             }
         )
 
@@ -78,7 +198,7 @@ def build_demo_outputs(n_points: int = 2500) -> tuple[list[dict], list[dict], di
         "coverage_rate": 0.0,
         "evaluation_window_days": 0,
         "total_incidents_evaluated": 0,
-        "note": "Demo mode: generate real outputs via `python run_phase5_1.py`.",
+        "note": f"Demo mode for {scenario_id}. Generate real outputs with: python run_scenarios.py",
     }
     return risk_grid, hotspots, metrics
 
@@ -90,43 +210,35 @@ def main():
         initial_sidebar_state="collapsed",
     )
 
-    risk_grid = None
-    hotspots = None
-    metrics: dict = {}
-
-    try:
-        with open("outputs/risk_grid_latest.json", "r") as f:
-            risk_grid = json.load(f)
-    except FileNotFoundError:
-        risk_grid = None
-
-    try:
-        with open("outputs/hotspots_latest.json", "r") as f:
-            hotspots = json.load(f)
-    except FileNotFoundError:
-        hotspots = None
-
-    try:
-        with open("outputs/metrics_latest.json", "r") as f:
-            metrics = json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        metrics = {}
-
-    if risk_grid is None or hotspots is None:
-        st.warning(
-            "Running in **demo mode** because `outputs/risk_grid_latest.json` and/or "
-            "`outputs/hotspots_latest.json` are missing."
-        )
-        st.info("Generate real outputs with `python run_phase5_1.py`.")
-        risk_grid, hotspots, demo_metrics = build_demo_outputs()
-        # Only overwrite metrics if we don't have real metrics
-        if not metrics:
-            metrics = demo_metrics
-
+    # Initialize session state
     if "placements" not in st.session_state:
         st.session_state.placements = []
     if "mode" not in st.session_state:
         st.session_state.mode = "Human"
+    if "current_scenario" not in st.session_state:
+        st.session_state.current_scenario = "default"
+    if "scenario_data" not in st.session_state:
+        # Pre-load all scenario data
+        st.session_state.scenario_data = load_all_scenario_data()
+    
+    # Get current scenario's data
+    scenario_id = st.session_state.current_scenario
+    scenario_data = st.session_state.scenario_data
+    
+    if scenario_id in scenario_data:
+        risk_grid, hotspots, metrics = scenario_data[scenario_id]
+        is_demo = False
+    else:
+        # Fall back to demo mode
+        risk_grid, hotspots, metrics = build_demo_outputs(scenario_id=scenario_id)
+        is_demo = True
+    
+    # Show warning if in demo mode
+    if is_demo and not st.session_state.get("demo_warning_dismissed"):
+        st.warning(
+            f"Running in **demo mode** for scenario '{scenario_id}'. "
+            "Generate real data with: `python run_scenarios.py`"
+        )
 
     # Reduce Streamlit chrome spacing so the component can truly fill the viewport.
     st.markdown(
@@ -249,21 +361,33 @@ def main():
         unsafe_allow_html=True,
     )
 
+    # Pass all scenario data to component so it can switch without page reload
     event = drag_drop_game(
         risk_grid=risk_grid,
         hotspots=hotspots,
         metrics=metrics,
         placements=st.session_state.placements,
         mode=st.session_state.mode,
+        scenario_id=scenario_id,
+        all_scenario_data=scenario_data,  # Pass all data for client-side switching
         key="drag_drop_game_v1",
     )
 
-    # Persist the latest placements/mode emitted by the component.
+    # Handle events from the component
     if isinstance(event, dict) and event:
         if event.get("mode") in {"Human", "AI"}:
             st.session_state.mode = event["mode"]
         if isinstance(event.get("placements"), list):
             st.session_state.placements = event["placements"]
+        
+        # Handle scenario change event
+        if event.get("type") == "scenario" and event.get("scenario"):
+            new_scenario = event["scenario"]
+            if new_scenario != st.session_state.current_scenario:
+                st.session_state.current_scenario = new_scenario
+                # Reset placements when scenario changes
+                st.session_state.placements = []
+                st.rerun()
 
 
 if __name__ == "__main__":

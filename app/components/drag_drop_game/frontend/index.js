@@ -236,6 +236,8 @@ let state = {
   scenario: "default",
   ambulanceCount: 4,
   showingAI: false,
+  // Scenario data cache from backend
+  allScenarioData: {}, // { scenarioId: { risk_grid, hotspots, metrics } }
 };
 
 let map = null;
@@ -385,7 +387,37 @@ function updateStory() {
 
 function updateScenario(scenarioId) {
   if (!SCENARIOS[scenarioId]) return;
+  
+  const previousScenario = state.scenario;
   state.scenario = scenarioId;
+  
+  // Check if we have data for this scenario from the backend
+  const scenarioData = state.allScenarioData[scenarioId];
+  
+  if (scenarioData) {
+    // Switch to the new scenario's data
+    state.risk_grid = Array.isArray(scenarioData.risk_grid) ? scenarioData.risk_grid : [];
+    state.hotspots = Array.isArray(scenarioData.hotspots) ? scenarioData.hotspots : [];
+    state.metrics = scenarioData.metrics || {};
+    
+    // Update the predicted incidents count
+    const m = state.metrics || {};
+    const incidents = m.total_incidents_evaluated ?? null;
+    els.mIncidents.textContent = fmtInt(incidents);
+    
+    // Refresh the map layers with new data
+    refreshDeckLayers();
+    
+    console.log(`Switched to scenario '${scenarioId}' with ${state.risk_grid.length} risk cells`);
+  } else {
+    console.log(`No data for scenario '${scenarioId}', keeping current data`);
+  }
+  
+  // Reset placements when scenario changes
+  if (previousScenario !== scenarioId) {
+    resetPlacements();
+  }
+  
   updateStory();
   emitValue({ type: "scenario", scenario: scenarioId, mode: state.mode });
 }
@@ -847,6 +879,17 @@ function hydrateFromArgs(args) {
   state.hotspots = Array.isArray(args.hotspots) ? args.hotspots : [];
   state.metrics = args.metrics || {};
   state.placements = Array.isArray(args.placements) ? args.placements : [];
+  
+  // Store scenario data from backend for client-side switching
+  if (args.all_scenario_data && typeof args.all_scenario_data === 'object') {
+    state.allScenarioData = args.all_scenario_data;
+  }
+  
+  // Update current scenario if provided
+  if (args.scenario_id && SCENARIOS[args.scenario_id]) {
+    state.scenario = args.scenario_id;
+    els.scenarioSelect.value = args.scenario_id;
+  }
 
   ensureMap();
   updateStory();
