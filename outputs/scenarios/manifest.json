@@ -1,0 +1,61 @@
+{
+  "generated_at": "2025-12-13T18:26:39.364208",
+  "scenarios": [
+    {
+      "scenario_id": "default",
+      "grid_path": "outputs/scenarios/default_risk_grid.json",
+      "hotspot_path": "outputs/scenarios/default_hotspots.json",
+      "cell_count": 754,
+      "hotspot_count": 10
+    },
+    {
+      "scenario_id": "sxsw",
+      "grid_path": "outputs/scenarios/sxsw_risk_grid.json",
+      "hotspot_path": "outputs/scenarios/sxsw_hotspots.json",
+      "cell_count": 1102,
+      "hotspot_count": 10
+    },
+    {
+      "scenario_id": "acl",
+      "grid_path": "outputs/scenarios/acl_risk_grid.json",
+      "hotspot_path": "outputs/scenarios/acl_hotspots.json",
+      "cell_count": 697,
+      "hotspot_count": 10
+    },
+    {
+      "scenario_id": "f1",
+      "grid_path": "outputs/scenarios/f1_risk_grid.json",
+      "hotspot_path": "outputs/scenarios/f1_hotspots.json",
+      "cell_count": 511,
+      "hotspot_count": 10
+    },
+    {
+      "scenario_id": "july4",
+      "grid_path": "outputs/scenarios/july4_risk_grid.json",
+      "hotspot_path": "outputs/scenarios/july4_hotspots.json",
+      "cell_count": 127,
+      "hotspot_count": 10
+    },
+    {
+      "scenario_id": "halloween",
+      "grid_path": "outputs/scenarios/halloween_risk_grid.json",
+      "hotspot_path": "outputs/scenarios/halloween_hotspots.json",
+      "cell_count": 803,
+      "hotspot_count": 10
+    },
+    {
+      "scenario_id": "nye",
+      "grid_path": "outputs/scenarios/nye_risk_grid.json",
+      "hotspot_path": "outputs/scenarios/nye_hotspots.json",
+      "cell_count": 194,
+      "hotspot_count": 10
+    },
+    {
+      "scenario_id": "ut_game",
+      "grid_path": "outputs/scenarios/ut_game_risk_grid.json",
+      "hotspot_path": "outputs/scenarios/ut_game_hotspots.json",
+      "cell_count": 1361,
+      "hotspot_count": 10
+    }
+  ]
+}
