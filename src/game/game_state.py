@@ -33,14 +33,18 @@ class GameState:
     total_units: int = 0
     committed: bool = False
     results: Optional[dict] = None
+    pandemonium_enabled: bool = False  # Flag for Pandemonium AI mode
+    wave_state: Optional[dict] = None  # Runtime wave state (None for historical mode)
 
 
-def start_new_game(scenario: Scenario) -> GameState:
+def start_new_game(scenario: Scenario, pandemonium_enabled: bool = False, wave_state: Optional[dict] = None) -> GameState:
     """
     Initialize a new game from a scenario.
 
     Args:
         scenario: Complete scenario object
+        pandemonium_enabled: True if Pandemonium AI mode
+        wave_state: Initial wave state (for Pandemonium mode)
 
     Returns:
         GameState initialized to BRIEFING phase
@@ -54,7 +58,9 @@ def start_new_game(scenario: Scenario) -> GameState:
         unit_types={},
         total_units=total_units,
         committed=False,
-        results=None
+        results=None,
+        pandemonium_enabled=pandemonium_enabled,
+        wave_state=wave_state
     )
 
 
@@ -83,7 +89,9 @@ def set_phase(state: GameState, phase: str) -> GameState:
         unit_types=state.unit_types.copy(),
         total_units=state.total_units,
         committed=state.committed,
-        results=state.results
+        results=state.results,
+        pandemonium_enabled=state.pandemonium_enabled,
+        wave_state=state.wave_state
     )
 
 
@@ -140,7 +148,9 @@ def add_placement(state: GameState, cell_id: str, unit_type: str = PATROL) -> Ga
         unit_types=new_unit_types,
         total_units=state.total_units,
         committed=state.committed,
-        results=state.results
+        results=state.results,
+        pandemonium_enabled=state.pandemonium_enabled,
+        wave_state=state.wave_state
     )
 
 
@@ -180,7 +190,9 @@ def remove_placement(state: GameState, cell_id: str) -> GameState:
         unit_types=new_unit_types,
         total_units=state.total_units,
         committed=state.committed,
-        results=state.results
+        results=state.results,
+        pandemonium_enabled=state.pandemonium_enabled,
+        wave_state=state.wave_state
     )
 
 
@@ -219,5 +231,7 @@ def commit(state: GameState) -> GameState:
         unit_types=state.unit_types.copy(),
         total_units=state.total_units,
         committed=True,
-        results=state.results
+        results=state.results,
+        pandemonium_enabled=state.pandemonium_enabled,
+        wave_state=state.wave_state
     )

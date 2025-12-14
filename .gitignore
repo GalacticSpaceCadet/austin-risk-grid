@@ -43,6 +43,10 @@ data/facts/*.parquet
 # Generated outputs (large)
 outputs/*_latest.json
 
+# Pandemonium AI test outputs
+test_pandemonium_scenario.json
+nul
+
 # Streamlit
 .streamlit/
 
