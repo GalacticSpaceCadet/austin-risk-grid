@@ -7,6 +7,7 @@ import { showScoringPanel, updateDeployButton } from '../ui/story.js';
 import { emitValue } from '../streamlit/protocol.js';
 import { calculateRealTimeScores, calculateOptimalPlacements } from './scoring.js';
 import { getMap } from '../map/init.js';
+import { saveSession } from '../data/sessionStore.js';
 
 // Removed generateRandomAIPlacements() - now using real locations from LLM prediction
 
@@ -128,6 +129,19 @@ export function showAIPlacements() {
     };
 
     showScoringPanel(scores);
+
+    // Save session for historical trends
+    saveSession({
+      scenario: state.scenario,
+      finalScore: realScores.playerScore,
+      aiScore: realScores.aiScore,
+      coveragePercent: realScores.placementScore,
+      placementCount: state.placements.length,
+      placements: state.placements,
+      grade,
+      hotspotsCovered: realScores.hotspotsCovered,
+      incidentsCovered: realScores.incidentsCovered,
+    });
 
     updateDeployButton();
   } else {

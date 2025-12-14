@@ -20,6 +20,10 @@ import { initHistoryPanel } from './js/ui/historyPanel.js';
 import { setUpdateBayCallback } from './js/core/history.js';
 import { setUpdateBayCallbackPresets } from './js/core/presets.js';
 import { showAIPlacements } from './js/game/ai.js';
+import { initComparisonControls } from './js/ui/comparisonControls.js';
+import { initSplitScreen } from './js/ui/splitScreen.js';
+import { initDiffLayer } from './js/map/diffLayer.js';
+import { initReplayPanel } from './js/ui/replayPanel.js';
 
 // Hydrate state from Streamlit args
 function hydrateFromArgs(args) {
@@ -162,6 +166,18 @@ function init() {
 
   // Initialize Human/AI placement toggle
   initPlacementToggle();
+
+  // Initialize comparison view controls
+  initComparisonControls();
+
+  // Initialize split-screen view
+  initSplitScreen();
+
+  // Initialize diff layer for coverage gap visualization
+  initDiffLayer();
+
+  // Initialize replay panel
+  initReplayPanel();
 
   // Set up drag callback to update bay
   setOnPlacementCallback(() => {

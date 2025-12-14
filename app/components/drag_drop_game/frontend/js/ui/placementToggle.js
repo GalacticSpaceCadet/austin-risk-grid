@@ -10,6 +10,7 @@ function getElements() {
     els = {
       container: document.getElementById('placementToggle'),
       humanBtn: document.getElementById('toggleHuman'),
+      bothBtn: document.getElementById('toggleBoth'),
       aiBtn: document.getElementById('toggleAI'),
     };
   }
@@ -21,6 +22,7 @@ export function initPlacementToggle() {
   if (!elements.humanBtn || !elements.aiBtn) return;
 
   elements.humanBtn.addEventListener('click', () => setViewingMode('human'));
+  elements.bothBtn?.addEventListener('click', () => setViewingMode('both'));
   elements.aiBtn.addEventListener('click', () => setViewingMode('ai'));
 
   // Subscribe to showingAI state changes to show/hide toggle
@@ -43,21 +45,24 @@ function onShowingAIChange(showingAI) {
   }
 }
 
-function setViewingMode(mode) {
+export function setViewingMode(mode) {
   updateState({ viewingMode: mode });
 
   const elements = getElements();
   if (!elements.humanBtn || !elements.aiBtn) return;
 
   elements.humanBtn.classList.toggle('active', mode === 'human');
+  elements.bothBtn?.classList.toggle('active', mode === 'both');
   elements.aiBtn.classList.toggle('active', mode === 'ai');
   elements.humanBtn.setAttribute('aria-pressed', mode === 'human');
+  elements.bothBtn?.setAttribute('aria-pressed', mode === 'both');
   elements.aiBtn.setAttribute('aria-pressed', mode === 'ai');
 }
 
 function updateMarkerVisibility(viewingMode) {
-  const showHuman = viewingMode === 'human';
-  const showAI = viewingMode === 'ai';
+  const showHuman = viewingMode === 'human' || viewingMode === 'both';
+  const showAI = viewingMode === 'ai' || viewingMode === 'both';
+  const isBothMode = viewingMode === 'both';
 
   // Update human markers
   for (const [, marker] of markers.entries()) {
@@ -65,7 +70,9 @@ function updateMarkerVisibility(viewingMode) {
     if (el) {
       el.style.opacity = showHuman ? '1' : '0.25';
       el.style.pointerEvents = showHuman ? 'auto' : 'none';
-      el.style.transition = 'opacity 250ms ease';
+      el.style.transition = 'opacity 250ms ease, transform 250ms ease';
+      // In both mode, keep human markers in normal position
+      el.classList.toggle('overlay-mode-human', isBothMode);
     }
   }
 
@@ -73,8 +80,10 @@ function updateMarkerVisibility(viewingMode) {
   for (const [, marker] of aiMarkers.entries()) {
     const el = marker.getElement();
     if (el) {
-      el.style.opacity = showAI ? '1' : '0.25';
-      el.style.transition = 'opacity 250ms ease';
+      // In both mode, AI markers are slightly transparent and offset
+      el.style.opacity = isBothMode ? '0.7' : (showAI ? '1' : '0.25');
+      el.style.transition = 'opacity 250ms ease, transform 250ms ease';
+      el.classList.toggle('overlay-mode-ai', isBothMode);
     }
   }
 }

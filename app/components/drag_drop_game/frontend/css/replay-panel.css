@@ -1,0 +1,330 @@
+/* Replay panel styles */
+
+.replay-panel {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  width: 320px;
+  padding: 14px;
+  background: rgba(15, 23, 42, 0.95);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  z-index: 40;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+
+.replay-panel.hidden {
+  display: none;
+}
+
+.replay-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.replay-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: white;
+}
+
+.replay-title-icon {
+  font-size: 14px;
+}
+
+.replay-close {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.replay-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+/* Controls row */
+.replay-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.replay-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.replay-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.replay-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.replay-btn-play {
+  width: 44px;
+  height: 44px;
+  font-size: 18px;
+  background: rgba(34, 197, 94, 0.2);
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.replay-btn-play:hover:not(:disabled) {
+  background: rgba(34, 197, 94, 0.3);
+}
+
+.replay-btn-play.playing {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.replay-btn-play.playing:hover {
+  background: rgba(239, 68, 68, 0.3);
+}
+
+.play-icon, .pause-icon {
+  pointer-events: none;
+}
+
+/* Frame counter */
+.replay-counter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 10px;
+  justify-content: center;
+}
+
+.replay-frame {
+  font-weight: 700;
+  color: white;
+}
+
+/* Speed selector */
+.replay-speed-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.replay-speed-label {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.replay-speed-select {
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  color: white;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.replay-speed-select option {
+  background: #1e293b;
+  color: white;
+}
+
+/* Timeline container */
+.replay-timeline {
+  padding: 8px 0;
+}
+
+.timeline-empty {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 12px;
+  padding: 12px;
+}
+
+.timeline-track {
+  position: relative;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  margin: 8px 12px;
+}
+
+.timeline-progress {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, rgba(34, 197, 94, 0.4), rgba(59, 130, 246, 0.4));
+  border-radius: 12px;
+  transition: width 150ms ease;
+}
+
+.timeline-dot {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--dot-color, #64748b);
+  border: 2px solid white;
+  cursor: pointer;
+  transition: all 150ms ease;
+  z-index: 1;
+  padding: 0;
+}
+
+.timeline-dot:hover {
+  transform: translate(-50%, -50%) scale(1.3);
+  z-index: 2;
+}
+
+.timeline-dot.active {
+  width: 16px;
+  height: 16px;
+  box-shadow: 0 0 12px var(--dot-color, #64748b);
+  z-index: 3;
+}
+
+.timeline-dot.past {
+  opacity: 0.7;
+}
+
+.timeline-dot.future {
+  opacity: 0.4;
+}
+
+/* Current action label */
+.timeline-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  margin-top: 8px;
+}
+
+.timeline-icon {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.timeline-text {
+  flex: 1;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.timeline-time {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Mini timeline (for compact display) */
+.mini-timeline {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+}
+
+.mini-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.mini-dot.filled {
+  background: rgba(34, 197, 94, 0.6);
+}
+
+.mini-dot.current {
+  background: #22c55e;
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.5);
+}
+
+/* Dark mode is default, light mode overrides */
+[data-theme="light"] .replay-panel {
+  background: rgba(255, 255, 255, 0.98);
+  border-color: var(--border);
+}
+
+[data-theme="light"] .replay-title {
+  color: var(--text);
+}
+
+[data-theme="light"] .replay-close {
+  background: rgba(15, 23, 42, 0.05);
+  color: var(--muted);
+}
+
+[data-theme="light"] .replay-close:hover {
+  background: rgba(15, 23, 42, 0.1);
+  color: var(--text);
+}
+
+[data-theme="light"] .replay-btn {
+  background: rgba(15, 23, 42, 0.05);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+[data-theme="light"] .replay-btn:hover:not(:disabled) {
+  background: rgba(15, 23, 42, 0.1);
+}
+
+[data-theme="light"] .replay-counter {
+  color: var(--muted);
+}
+
+[data-theme="light"] .replay-frame {
+  color: var(--text);
+}
+
+[data-theme="light"] .timeline-track {
+  background: rgba(15, 23, 42, 0.08);
+}
+
+[data-theme="light"] .timeline-label {
+  background: rgba(15, 23, 42, 0.05);
+}
+
+[data-theme="light"] .timeline-text {
+  color: var(--text);
+}
+
+[data-theme="light"] .timeline-time {
+  color: var(--muted);
+}

@@ -1,0 +1,171 @@
+/* Split-screen map view styles */
+
+.map-split-container {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  gap: 0;
+  position: relative;
+}
+
+.map-pane {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+  transition: flex 300ms ease;
+}
+
+.map-pane.hidden {
+  flex: 0;
+  width: 0;
+  overflow: hidden;
+}
+
+/* When in single mode, human pane takes full width */
+.map-split-container:not(.split-mode) .map-pane-human {
+  flex: 1;
+}
+
+.map-split-container:not(.split-mode) .map-pane-ai {
+  flex: 0;
+  width: 0;
+}
+
+/* Split mode - both panes visible */
+.map-split-container.split-mode .map-pane {
+  flex: 1;
+}
+
+.map-split-container.split-mode .map-pane-ai {
+  display: block;
+}
+
+.map-split-container.split-mode .map-pane.hidden {
+  display: block;
+  flex: 1;
+  width: auto;
+}
+
+/* Map container inside pane */
+.map-pane > div:first-child {
+  width: 100%;
+  height: 100%;
+}
+
+/* Divider between panes */
+.map-split-container.split-mode .map-pane-human::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--border);
+  z-index: 10;
+}
+
+/* Pane labels */
+.pane-label {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 14px;
+  background: rgba(15, 23, 42, 0.85);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: 20px;
+  z-index: 20;
+  opacity: 0;
+  transition: opacity 300ms ease;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  pointer-events: none;
+}
+
+/* Show labels only in split mode */
+.map-split-container.split-mode .pane-label {
+  opacity: 1;
+}
+
+.map-pane-human .pane-label {
+  background: rgba(59, 130, 246, 0.9);
+}
+
+.map-pane-ai .pane-label {
+  background: rgba(139, 92, 246, 0.9);
+}
+
+/* Score overlays in split mode */
+.pane-score {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 16px;
+  background: rgba(15, 23, 42, 0.9);
+  color: white;
+  font-size: 18px;
+  font-weight: 800;
+  border-radius: 12px;
+  z-index: 20;
+  opacity: 0;
+  transition: opacity 300ms ease;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  pointer-events: none;
+}
+
+.map-split-container.split-mode .pane-score {
+  opacity: 1;
+}
+
+.map-pane-human .pane-score {
+  border-color: rgba(59, 130, 246, 0.4);
+}
+
+.map-pane-ai .pane-score {
+  border-color: rgba(139, 92, 246, 0.4);
+}
+
+/* Dark mode overrides */
+[data-theme="dark"] .pane-label {
+  background: rgba(30, 41, 59, 0.9);
+}
+
+[data-theme="dark"] .map-pane-human .pane-label {
+  background: rgba(59, 130, 246, 0.85);
+}
+
+[data-theme="dark"] .map-pane-ai .pane-label {
+  background: rgba(139, 92, 246, 0.85);
+}
+
+[data-theme="dark"] .map-split-container.split-mode .map-pane-human::after {
+  background: rgba(71, 85, 105, 0.5);
+}
+
+/* Responsive: stack vertically on mobile */
+@media (max-width: 768px) {
+  .map-split-container.split-mode {
+    flex-direction: column;
+  }
+
+  .map-split-container.split-mode .map-pane {
+    min-height: 200px;
+  }
+
+  .map-split-container.split-mode .map-pane-human::after {
+    right: 0;
+    left: 0;
+    top: auto;
+    bottom: 0;
+    width: 100%;
+    height: 3px;
+  }
+}

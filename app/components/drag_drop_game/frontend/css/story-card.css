@@ -129,6 +129,10 @@
   color: #3b82f6;
 }
 
+.toggle-btn-both.active {
+  color: #10b981;
+}
+
 .toggle-btn-ai.active {
   color: #8b5cf6;
 }

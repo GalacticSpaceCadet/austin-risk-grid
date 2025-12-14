@@ -1,0 +1,124 @@
+/* Coverage diff legend styles */
+
+.diff-legend {
+  position: absolute;
+  bottom: 80px;
+  left: 12px;
+  padding: 12px 16px;
+  background: rgba(15, 23, 42, 0.92);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  z-index: 30;
+  min-width: 180px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.diff-legend.hidden {
+  display: none;
+}
+
+.diff-legend-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 10px;
+}
+
+.diff-legend-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.diff-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.diff-legend-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.diff-legend-color.human-better {
+  background: rgba(34, 197, 94, 0.9);
+  border: 2px solid #16a34a;
+}
+
+.diff-legend-color.ai-better {
+  background: rgba(239, 68, 68, 0.9);
+  border: 2px solid #dc2626;
+}
+
+.diff-legend-color.both-cover {
+  background: rgba(59, 130, 246, 0.7);
+  border: 2px solid #2563eb;
+}
+
+.diff-legend-label {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.9);
+  flex: 1;
+}
+
+.diff-legend-count {
+  font-size: 12px;
+  font-weight: 700;
+  color: white;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 2px 8px;
+  border-radius: 10px;
+  min-width: 24px;
+  text-align: center;
+}
+
+/* Summary section */
+.diff-legend-summary {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.diff-summary-text {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.4;
+}
+
+.diff-summary-highlight {
+  color: #22c55e;
+  font-weight: 600;
+}
+
+.diff-summary-highlight.negative {
+  color: #ef4444;
+}
+
+/* Light theme (if needed) */
+[data-theme="light"] .diff-legend {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: var(--border);
+}
+
+[data-theme="light"] .diff-legend-title {
+  color: var(--muted);
+}
+
+[data-theme="light"] .diff-legend-label {
+  color: var(--text);
+}
+
+[data-theme="light"] .diff-legend-count {
+  background: rgba(15, 23, 42, 0.1);
+  color: var(--text);
+}
+
+[data-theme="light"] .diff-summary-text {
+  color: var(--muted);
+}

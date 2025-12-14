@@ -133,6 +133,17 @@ export function placeOrMoveMarker(unitId, lat, lon, options = {}) {
   }
 }
 
+/**
+ * Create an AI marker element (without adding to map)
+ * Used by split-screen to place AI markers on the secondary map
+ */
+export function createAIMarkerElement(unitId) {
+  const el = document.createElement("div");
+  el.className = "mapAmbulanceMarker ai-marker";
+  el.innerHTML = aiAmbulanceSVG() + `<span class="markerBadge">AI</span>`;
+  return el;
+}
+
 export function placeAIMarker(unitId, lat, lon) {
   const map = getMap();
   if (!map) {

@@ -2,6 +2,9 @@
 import { getState, subscribe } from '../core/state.js';
 import { calculateRealTimeScores, getSparklineData } from '../game/scoring.js';
 import { renderSparkline } from './sparkline.js';
+import { getSessions, getScenarioStats, getRecentTrend, getTimePatterns } from '../data/sessionStore.js';
+
+let currentTab = 'live'; // 'live' | 'trends'
 
 let els = null;
 let isDragging = false;
@@ -27,6 +30,16 @@ function getElements() {
       sparklineIncidents: document.getElementById('sparkline-incidents'),
       sparklineEfficiency: document.getElementById('sparkline-efficiency'),
       evalWindow: document.getElementById('eval-window'),
+      // Tab elements
+      tabLive: document.getElementById('tab-live'),
+      tabTrends: document.getElementById('tab-trends'),
+      liveContent: document.getElementById('metrics-live-content'),
+      trendsContent: document.getElementById('metrics-trends-content'),
+      // Trends content
+      trendsSparkline: document.getElementById('trends-sparkline'),
+      scenarioChart: document.getElementById('scenario-chart'),
+      timeInsights: document.getElementById('time-insights'),
+      sessionsCount: document.getElementById('sessions-count'),
     };
   }
   return els;
@@ -200,10 +213,161 @@ function updateTrend(el, trend) {
   }
 }
 
+// Initialize tabs
+function initTabs() {
+  const elements = getElements();
+
+  elements.tabLive?.addEventListener('click', () => switchTab('live'));
+  elements.tabTrends?.addEventListener('click', () => switchTab('trends'));
+}
+
+// Switch between live and trends tabs
+function switchTab(tab) {
+  currentTab = tab;
+  const elements = getElements();
+
+  // Update tab button states
+  elements.tabLive?.classList.toggle('active', tab === 'live');
+  elements.tabTrends?.classList.toggle('active', tab === 'trends');
+
+  // Show/hide content
+  if (elements.liveContent) {
+    elements.liveContent.style.display = tab === 'live' ? 'block' : 'none';
+  }
+  if (elements.trendsContent) {
+    elements.trendsContent.style.display = tab === 'trends' ? 'block' : 'none';
+  }
+
+  // Update trends when switching to that tab
+  if (tab === 'trends') {
+    updateTrendsView();
+  }
+}
+
+// Update trends view with historical data
+function updateTrendsView() {
+  const elements = getElements();
+
+  // Get session data
+  const sessions = getSessions();
+  const scenarioStats = getScenarioStats();
+  const recentTrend = getRecentTrend(10);
+  const timePatterns = getTimePatterns();
+
+  // Update sessions count
+  if (elements.sessionsCount) {
+    elements.sessionsCount.textContent = sessions.length;
+  }
+
+  // Render recent performance sparkline
+  if (elements.trendsSparkline) {
+    const scores = recentTrend.map(t => t.score);
+    renderSparkline(elements.trendsSparkline, scores);
+  }
+
+  // Render scenario comparison chart
+  if (elements.scenarioChart) {
+    renderScenarioChart(elements.scenarioChart, scenarioStats);
+  }
+
+  // Render time insights
+  if (elements.timeInsights) {
+    renderTimeInsights(elements.timeInsights, timePatterns);
+  }
+}
+
+// Render scenario comparison bar chart
+function renderScenarioChart(container, stats) {
+  container.innerHTML = '';
+
+  const scenarios = Object.keys(stats);
+  if (scenarios.length === 0) {
+    container.innerHTML = '<div class="no-data">No session data yet</div>';
+    return;
+  }
+
+  // Find max score for scaling
+  const maxScore = Math.max(...scenarios.map(s => stats[s].avgScore || 0), 100);
+
+  scenarios.forEach(scenario => {
+    const data = stats[scenario];
+    const percent = (data.avgScore / maxScore) * 100;
+
+    const row = document.createElement('div');
+    row.className = 'scenario-row';
+
+    const label = document.createElement('span');
+    label.className = 'scenario-label';
+    label.textContent = formatScenarioName(scenario);
+
+    const barContainer = document.createElement('div');
+    barContainer.className = 'scenario-bar-container';
+
+    const bar = document.createElement('div');
+    bar.className = 'scenario-bar';
+    bar.style.width = `${percent}%`;
+
+    const value = document.createElement('span');
+    value.className = 'scenario-value';
+    value.textContent = `${data.avgScore}%`;
+
+    const count = document.createElement('span');
+    count.className = 'scenario-count';
+    count.textContent = `(${data.count})`;
+
+    barContainer.appendChild(bar);
+    row.appendChild(label);
+    row.appendChild(barContainer);
+    row.appendChild(value);
+    row.appendChild(count);
+    container.appendChild(row);
+  });
+}
+
+// Format scenario name for display
+function formatScenarioName(scenario) {
+  const names = {
+    default: 'Normal',
+    sxsw: 'SXSW',
+    acl: 'ACL',
+    f1: 'F1',
+    july4: 'July 4th',
+    halloween: 'Halloween',
+    nye: 'NYE',
+    ut_game: 'UT Game',
+  };
+  return names[scenario] || scenario;
+}
+
+// Render time pattern insights
+function renderTimeInsights(container, patterns) {
+  container.innerHTML = '';
+
+  if (!patterns.hasEnoughData) {
+    container.innerHTML = '<div class="no-data">Play more sessions to see patterns</div>';
+    return;
+  }
+
+  const insights = [];
+
+  if (patterns.bestDayLabel) {
+    insights.push(`Best day: <strong>${patterns.bestDayLabel}</strong>`);
+  }
+
+  if (patterns.bestHourLabel) {
+    insights.push(`Peak hours: <strong>${patterns.bestHourLabel}</strong>`);
+  }
+
+  insights.push(`Total sessions: <strong>${patterns.totalSessions}</strong>`);
+
+  container.innerHTML = insights.map(i => `<div class="insight-row">${i}</div>`).join('');
+}
+
 // Initialize dashboard
 export function initDashboard() {
   initDrag();
   initCollapse();
+  initTabs();
 
   // Subscribe to placement changes for real-time updates
   subscribe('placements', updateDashboard);
@@ -213,3 +377,6 @@ export function initDashboard() {
   // Initial update
   updateDashboard();
 }
+
+// Export for external updates
+export { updateTrendsView };

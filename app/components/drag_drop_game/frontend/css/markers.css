@@ -155,3 +155,20 @@
   left: 50%;
   transform: translate(-50%, -50%);
 }
+
+/* Overlay mode styles - when viewing both Human and AI markers */
+.mapAmbulanceMarker.overlay-mode-human {
+  /* Human markers stay in place, add subtle blue glow */
+  filter: drop-shadow(0 6px 12px rgba(0,0,0,0.35)) drop-shadow(0 0 6px rgba(59, 130, 246, 0.4));
+}
+
+.mapAmbulanceMarker.overlay-mode-ai {
+  /* AI markers offset slightly and have dashed appearance */
+  transform: translate(6px, -6px);
+  filter: drop-shadow(0 6px 12px rgba(0,0,0,0.25)) drop-shadow(0 0 8px rgba(139, 92, 246, 0.5));
+}
+
+.mapAmbulanceMarker.overlay-mode-ai .markerBadge {
+  /* Dashed border effect on AI badges in overlay mode */
+  border-style: dashed;
+}

@@ -10,7 +10,7 @@ const _state = {
   scenario: "default",
   ambulanceCount: 4,
   showingAI: false,
-  viewingMode: 'human', // 'human' | 'ai' - which placements are currently visible
+  viewingMode: 'human', // 'human' | 'ai' | 'both' - which placements are currently visible
   // Scenario data cache from backend
   allScenarioData: {}, // { scenarioId: { risk_grid, hotspots, metrics } }
   // History management
@@ -20,6 +20,15 @@ const _state = {
   // AI ambulance locations from LLM prediction
   aiAmbulanceLocations: [], // [{lat: float, lon: float}] from backend
   aiPredictionLoading: false, // Loading state for prediction
+  // Comparison view modes
+  comparisonMode: 'single', // 'single' | 'split' | 'overlay' | 'diff'
+  showDiffLayer: false, // Whether to show coverage diff heatmap
+  // Replay state
+  replayState: {
+    isPlaying: false,
+    currentFrame: 0,
+    speed: 1, // 0.5x, 1x, 2x multiplier
+  },
 };
 
 // Subscribers for reactive updates
@@ -63,8 +72,14 @@ export function resetState() {
   _state.aiPlacements = [];
   _state.showingAI = false;
   _state.viewingMode = 'human';
+  _state.comparisonMode = 'single';
+  _state.showDiffLayer = false;
+  _state.replayState = { isPlaying: false, currentFrame: 0, speed: 1 };
   notify('placements');
   notify('aiPlacements');
   notify('showingAI');
   notify('viewingMode');
+  notify('comparisonMode');
+  notify('showDiffLayer');
+  notify('replayState');
 }
