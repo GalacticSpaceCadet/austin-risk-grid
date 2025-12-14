@@ -1,0 +1,13 @@
+{
+  "scenario_id": "halloween",
+  "scenario_name": "Halloween Weekend",
+  "target_datetime": "2025-11-01 23:00",
+  "total_incidents_evaluated": 1945,
+  "expected_incident_range": [
+    30,
+    45
+  ],
+  "difficulty": "medium",
+  "cell_count": 803,
+  "hotspot_count": 10
+}

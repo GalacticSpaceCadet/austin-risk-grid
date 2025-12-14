@@ -1,0 +1,13 @@
+{
+  "scenario_id": "july4",
+  "scenario_name": "Fourth of July",
+  "target_datetime": "2025-07-04 21:00",
+  "total_incidents_evaluated": 145,
+  "expected_incident_range": [
+    25,
+    40
+  ],
+  "difficulty": "medium",
+  "cell_count": 127,
+  "hotspot_count": 10
+}

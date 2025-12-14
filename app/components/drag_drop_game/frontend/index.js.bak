@@ -866,33 +866,6 @@ function ensureMap() {
   // The overlay is kept for potential future tooltip/hover interactions
 }
 
-// Generate grid lines for the visible Austin area
-function generateGridLines() {
-  const lines = [];
-  
-  // Horizontal lines (constant latitude)
-  for (let lat = AUSTIN_BOUNDS.latMin; lat <= AUSTIN_BOUNDS.latMax; lat += CELL_DEG) {
-    lines.push({
-      path: [
-        [AUSTIN_BOUNDS.lonMin, lat],
-        [AUSTIN_BOUNDS.lonMax, lat],
-      ],
-    });
-  }
-  
-  // Vertical lines (constant longitude)
-  for (let lon = AUSTIN_BOUNDS.lonMin; lon <= AUSTIN_BOUNDS.lonMax; lon += CELL_DEG) {
-    lines.push({
-      path: [
-        [lon, AUSTIN_BOUNDS.latMin],
-        [lon, AUSTIN_BOUNDS.latMax],
-      ],
-    });
-  }
-  
-  return lines;
-}
-
 function placeOrMoveMarker(unitId, lat, lon, options = {}) {
   if (!map) return;
   const existing = markers.get(unitId);
@@ -1005,19 +978,6 @@ function refreshDeckLayers() {
 
   const heatData = Array.isArray(state.risk_grid) ? state.risk_grid : [];
   const hotspotData = Array.isArray(state.hotspots) ? state.hotspots : [];
-  const gridLines = generateGridLines();
-
-  // Grid overlay - subtle lines showing cell boundaries
-  const gridLayer = new deck.PathLayer({
-    id: "grid-lines",
-    data: gridLines,
-    getPath: (d) => d.path,
-    getColor: [100, 116, 139, 40], // slate-500 with low opacity
-    getWidth: 1,
-    widthMinPixels: 0.5,
-    widthMaxPixels: 1,
-    pickable: false,
-  });
 
   // Heatmap: weights by risk_score. Keep radius moderate for a clean look.
   // A red/orange ramp (no green haze) to match the original dashboard vibe.
@@ -1062,8 +1022,8 @@ function refreshDeckLayers() {
     pickable: false,
   });
 
-  // Grid first (bottom), then heat, then hotspots on top
-  deckOverlay.setProps({ layers: [gridLayer, heatLayer, hotspotLayer, textLayer] });
+  // Heatmap first (bottom), then hotspots on top
+  deckOverlay.setProps({ layers: [heatLayer, hotspotLayer, textLayer] });
 }
 
 function applyPlacementsFromArgs() {
