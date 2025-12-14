@@ -1,0 +1,13 @@
+{
+  "scenario_id": "nye",
+  "scenario_name": "New Year's Eve",
+  "target_datetime": "2025-12-31 23:00",
+  "total_incidents_evaluated": 240,
+  "expected_incident_range": [
+    25,
+    35
+  ],
+  "difficulty": "medium",
+  "cell_count": 194,
+  "hotspot_count": 10
+}

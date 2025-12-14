@@ -252,9 +252,11 @@ def export_scenario_outputs(
     risk_grid: pd.DataFrame,
     hotspots: pd.DataFrame,
     scenario_id: str,
+    scenario: Scenario,
+    incident_count: int,
     output_dir: str = "outputs/scenarios"
 ) -> dict:
-    """Export risk grid and hotspots for a scenario."""
+    """Export risk grid, hotspots, and metrics for a scenario."""
     
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
@@ -273,9 +275,22 @@ def export_scenario_outputs(
     hotspot_data['t_bucket'] = hotspot_data['t_bucket'].astype(str)
     hotspot_json = hotspot_data.to_dict(orient='records')
     
+    # Prepare metrics
+    metrics = {
+        "scenario_id": scenario_id,
+        "scenario_name": scenario.name,
+        "target_datetime": scenario.target_datetime,
+        "total_incidents_evaluated": incident_count,  # Historical incidents matching this scenario
+        "expected_incident_range": list(scenario.expected_incident_range),
+        "difficulty": scenario.difficulty,
+        "cell_count": len(grid_json),
+        "hotspot_count": len(hotspot_json),
+    }
+    
     # Write files
     grid_path = output_path / f"{scenario_id}_risk_grid.json"
     hotspot_path = output_path / f"{scenario_id}_hotspots.json"
+    metrics_path = output_path / f"{scenario_id}_metrics.json"
     
     with open(grid_path, 'w') as f:
         json.dump(grid_json, f)
@@ -283,14 +298,19 @@ def export_scenario_outputs(
     with open(hotspot_path, 'w') as f:
         json.dump(hotspot_json, f)
     
-    print(f"Exported {scenario_id}: {len(grid_json)} cells, {len(hotspot_json)} hotspots")
+    with open(metrics_path, 'w') as f:
+        json.dump(metrics, f, indent=2)
+    
+    print(f"Exported {scenario_id}: {len(grid_json)} cells, {len(hotspot_json)} hotspots, {incident_count} historical incidents")
     
     return {
         "scenario_id": scenario_id,
         "grid_path": str(grid_path),
         "hotspot_path": str(hotspot_path),
+        "metrics_path": str(metrics_path),
         "cell_count": len(grid_json),
         "hotspot_count": len(hotspot_json),
+        "incident_count": incident_count,
     }
 
 
@@ -318,6 +338,9 @@ def score_scenario(
     
     # Filter historical data for this scenario
     filtered_df = filter_data_for_scenario(historical_df, scenario)
+    
+    # Count of historical incidents matching this scenario
+    incident_count = len(filtered_df)
     
     if filtered_df.empty:
         print(f"Warning: No data for scenario {scenario_id}")
@@ -350,8 +373,8 @@ def score_scenario(
     neighborhoods = load_neighborhoods()
     hotspots = build_hotspots(risk_grid, neighborhoods)
     
-    # Export
-    return export_scenario_outputs(risk_grid, hotspots, scenario_id, output_dir)
+    # Export with metrics
+    return export_scenario_outputs(risk_grid, hotspots, scenario_id, scenario, incident_count, output_dir)
 
 
 def export_empty_scenario(scenario_id: str, scenario: Scenario, output_dir: str) -> dict:
@@ -361,6 +384,7 @@ def export_empty_scenario(scenario_id: str, scenario: Scenario, output_dir: str)
     
     grid_path = output_path / f"{scenario_id}_risk_grid.json"
     hotspot_path = output_path / f"{scenario_id}_hotspots.json"
+    metrics_path = output_path / f"{scenario_id}_metrics.json"
     
     with open(grid_path, 'w') as f:
         json.dump([], f)
@@ -368,14 +392,30 @@ def export_empty_scenario(scenario_id: str, scenario: Scenario, output_dir: str)
     with open(hotspot_path, 'w') as f:
         json.dump([], f)
     
+    metrics = {
+        "scenario_id": scenario_id,
+        "scenario_name": scenario.name,
+        "target_datetime": scenario.target_datetime,
+        "total_incidents_evaluated": 0,
+        "expected_incident_range": list(scenario.expected_incident_range),
+        "difficulty": scenario.difficulty,
+        "cell_count": 0,
+        "hotspot_count": 0,
+    }
+    
+    with open(metrics_path, 'w') as f:
+        json.dump(metrics, f, indent=2)
+    
     print(f"Exported empty scenario: {scenario_id}")
     
     return {
         "scenario_id": scenario_id,
         "grid_path": str(grid_path),
         "hotspot_path": str(hotspot_path),
+        "metrics_path": str(metrics_path),
         "cell_count": 0,
         "hotspot_count": 0,
+        "incident_count": 0,
     }
 
 

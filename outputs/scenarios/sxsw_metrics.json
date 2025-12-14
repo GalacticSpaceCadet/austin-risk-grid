@@ -1,0 +1,13 @@
+{
+  "scenario_id": "sxsw",
+  "scenario_name": "SXSW 2025",
+  "target_datetime": "2025-03-14 22:00",
+  "total_incidents_evaluated": 4063,
+  "expected_incident_range": [
+    40,
+    60
+  ],
+  "difficulty": "hard",
+  "cell_count": 1102,
+  "hotspot_count": 10
+}

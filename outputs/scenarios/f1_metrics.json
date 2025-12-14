@@ -1,0 +1,13 @@
+{
+  "scenario_id": "f1",
+  "scenario_name": "F1 US Grand Prix",
+  "target_datetime": "2025-10-19 13:00",
+  "total_incidents_evaluated": 827,
+  "expected_incident_range": [
+    30,
+    45
+  ],
+  "difficulty": "hard",
+  "cell_count": 511,
+  "hotspot_count": 10
+}

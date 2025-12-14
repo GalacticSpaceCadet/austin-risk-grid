@@ -1,0 +1,13 @@
+{
+  "scenario_id": "ut_game",
+  "scenario_name": "UT Football Game",
+  "target_datetime": "2025-09-06 18:00",
+  "total_incidents_evaluated": 8340,
+  "expected_incident_range": [
+    20,
+    35
+  ],
+  "difficulty": "medium",
+  "cell_count": 1361,
+  "hotspot_count": 10
+}
