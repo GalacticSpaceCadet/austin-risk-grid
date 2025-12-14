@@ -19,6 +19,7 @@
     <link rel="stylesheet" href="./css/loading.css">
     <link rel="stylesheet" href="./css/toast.css">
     <link rel="stylesheet" href="./css/error.css">
+    <link rel="stylesheet" href="./css/tutorial.css">
   </head>
 
   <body>
@@ -146,6 +147,34 @@
 
     <!-- Toast notification container -->
     <div id="toast-container" class="toast-container"></div>
+
+    <!-- Tutorial overlay -->
+    <div id="tutorial-overlay" class="tutorial-overlay hidden">
+      <div class="tutorial-backdrop"></div>
+      <div class="tutorial-spotlight"></div>
+      <div class="tutorial-tooltip" data-position="right">
+        <div class="tutorial-header">
+          <span class="tutorial-step-indicator">1 / 4</span>
+          <button class="tutorial-close" aria-label="Close tutorial">&times;</button>
+        </div>
+        <h3 class="tutorial-title">Welcome</h3>
+        <p class="tutorial-content">Loading tutorial...</p>
+        <div class="tutorial-demo-warning hidden">
+          <span class="demo-icon">⚠️</span>
+          <span>Demo Mode: Data shown is simulated for demonstration purposes.</span>
+        </div>
+        <div class="tutorial-footer">
+          <button class="tutorial-skip">Skip Tutorial</button>
+          <div class="tutorial-nav">
+            <button class="tutorial-prev" disabled>Back</button>
+            <button class="tutorial-next">Next</button>
+          </div>
+        </div>
+        <div class="tutorial-progress">
+          <div class="tutorial-progress-bar"></div>
+        </div>
+      </div>
+    </div>
 
     <!-- External libs (runtime CDN). This avoids a frontend build pipeline. -->
     <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>

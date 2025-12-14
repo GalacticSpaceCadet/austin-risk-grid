@@ -11,6 +11,8 @@ import { setOnPlacementCallback } from './js/interactions/drag.js';
 import { initLoadingHandlers } from './js/ui/loading.js';
 import { updateStory, updateDeployButton } from './js/ui/story.js';
 import { retryMapLoad } from './js/map/init.js';
+import { initTutorial } from './js/tutorial/controller.js';
+import { initHelpIcons } from './js/ui/help.js';
 
 // Hydrate state from Streamlit args
 function hydrateFromArgs(args) {
@@ -53,6 +55,10 @@ function init() {
   // Set up event handlers
   initEventHandlers();
   initLoadingHandlers(retryMapLoad);
+
+  // Initialize tutorial and help icons
+  initTutorial();
+  initHelpIcons();
 
   // Set up drag callback to update bay
   setOnPlacementCallback(() => {
