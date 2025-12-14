@@ -20,6 +20,7 @@
     <link rel="stylesheet" href="./css/toast.css">
     <link rel="stylesheet" href="./css/error.css">
     <link rel="stylesheet" href="./css/tutorial.css">
+    <link rel="stylesheet" href="./css/metrics-dashboard.css">
   </head>
 
   <body>
@@ -147,6 +148,68 @@
 
     <!-- Toast notification container -->
     <div id="toast-container" class="toast-container"></div>
+
+    <!-- Floating Metrics Dashboard Panel -->
+    <div id="metrics-dashboard" class="metrics-dashboard">
+      <div class="metrics-header" id="metrics-header">
+        <div class="metrics-title">
+          <span class="metrics-icon">📊</span>
+          <span>Live Performance</span>
+        </div>
+        <button class="metrics-toggle-btn" id="metrics-collapse" aria-label="Collapse panel">
+          <span class="collapse-icon">−</span>
+        </button>
+      </div>
+
+      <div class="metrics-body" id="metrics-body">
+        <div class="metrics-gauge-section">
+          <div class="gauge-container">
+            <svg class="gauge-svg" viewBox="0 0 120 70">
+              <path class="gauge-bg" d="M10 60 A50 50 0 0 1 110 60" />
+              <path class="gauge-fill" id="gauge-fill" d="M10 60 A50 50 0 0 1 110 60" />
+              <text class="gauge-label" x="18" y="55">AI</text>
+              <text class="gauge-label" x="95" y="55">You</text>
+            </svg>
+            <div class="gauge-score" id="gauge-score">--</div>
+            <div class="gauge-comparison" id="gauge-comparison">vs AI: --</div>
+          </div>
+        </div>
+
+        <div class="metrics-kpi-grid">
+          <div class="kpi-card" data-metric="coverage">
+            <div class="kpi-header">
+              <span class="kpi-label">Coverage</span>
+              <span class="kpi-trend" id="trend-coverage"></span>
+            </div>
+            <div class="kpi-value" id="kpi-coverage">--</div>
+            <div class="kpi-sparkline" id="sparkline-coverage"></div>
+          </div>
+
+          <div class="kpi-card" data-metric="incidents">
+            <div class="kpi-header">
+              <span class="kpi-label">Incidents</span>
+              <span class="kpi-trend" id="trend-incidents"></span>
+            </div>
+            <div class="kpi-value" id="kpi-incidents">--</div>
+            <div class="kpi-sparkline" id="sparkline-incidents"></div>
+          </div>
+
+          <div class="kpi-card" data-metric="efficiency">
+            <div class="kpi-header">
+              <span class="kpi-label">Score</span>
+              <span class="kpi-trend" id="trend-efficiency"></span>
+            </div>
+            <div class="kpi-value" id="kpi-efficiency">--</div>
+            <div class="kpi-sparkline" id="sparkline-efficiency"></div>
+          </div>
+        </div>
+
+        <div class="metrics-context">
+          <span class="context-label">Evaluation Window:</span>
+          <span class="context-value" id="eval-window">-- days</span>
+        </div>
+      </div>
+    </div>
 
     <!-- Tutorial overlay -->
     <div id="tutorial-overlay" class="tutorial-overlay hidden">

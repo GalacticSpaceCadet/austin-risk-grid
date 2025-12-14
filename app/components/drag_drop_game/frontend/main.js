@@ -13,6 +13,7 @@ import { updateStory, updateDeployButton } from './js/ui/story.js';
 import { retryMapLoad } from './js/map/init.js';
 import { initTutorial } from './js/tutorial/controller.js';
 import { initHelpIcons } from './js/ui/help.js';
+import { initDashboard } from './js/ui/dashboard.js';
 
 // Hydrate state from Streamlit args
 function hydrateFromArgs(args) {
@@ -59,6 +60,9 @@ function init() {
   // Initialize tutorial and help icons
   initTutorial();
   initHelpIcons();
+
+  // Initialize metrics dashboard
+  initDashboard();
 
   // Set up drag callback to update bay
   setOnPlacementCallback(() => {
