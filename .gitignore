@@ -33,6 +33,7 @@ data/facts/*.parquet
 
 # Generated outputs (large)
 outputs/risk_grid_latest.json
+outputs/hotspots_latest.json
 
 # Streamlit
 .streamlit/
