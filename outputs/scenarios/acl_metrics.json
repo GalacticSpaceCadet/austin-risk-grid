@@ -1,0 +1,13 @@
+{
+  "scenario_id": "acl",
+  "scenario_name": "ACL Festival",
+  "target_datetime": "2025-10-04 15:00",
+  "total_incidents_evaluated": 1482,
+  "expected_incident_range": [
+    35,
+    50
+  ],
+  "difficulty": "hard",
+  "cell_count": 697,
+  "hotspot_count": 10
+}

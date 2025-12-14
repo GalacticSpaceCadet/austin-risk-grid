@@ -23,7 +23,7 @@ def _fmt_t_bucket(dt: datetime) -> str:
 
 def load_scenario_data(scenario_id: str) -> tuple[list, list, dict]:
     """
-    Load risk grid and hotspots for a specific scenario.
+    Load risk grid, hotspots, and metrics for a specific scenario.
     
     Args:
         scenario_id: The scenario ID (e.g., 'sxsw', 'acl', 'default')
@@ -33,6 +33,7 @@ def load_scenario_data(scenario_id: str) -> tuple[list, list, dict]:
     """
     grid_path = SCENARIOS_DIR / f"{scenario_id}_risk_grid.json"
     hotspot_path = SCENARIOS_DIR / f"{scenario_id}_hotspots.json"
+    metrics_path = SCENARIOS_DIR / f"{scenario_id}_metrics.json"
     
     risk_grid = None
     hotspots = None
@@ -43,23 +44,22 @@ def load_scenario_data(scenario_id: str) -> tuple[list, list, dict]:
             with open(grid_path, 'r') as f:
                 risk_grid = json.load(f)
     except (json.JSONDecodeError, IOError) as e:
-        st.warning(f"Could not load risk grid for {scenario_id}: {e}")
+        print(f"Could not load risk grid for {scenario_id}: {e}")
     
     try:
         if hotspot_path.exists():
             with open(hotspot_path, 'r') as f:
                 hotspots = json.load(f)
     except (json.JSONDecodeError, IOError) as e:
-        st.warning(f"Could not load hotspots for {scenario_id}: {e}")
+        print(f"Could not load hotspots for {scenario_id}: {e}")
     
-    # Load metrics if available
+    # Load metrics - this contains the historical incident count
     try:
-        metrics_path = SCENARIOS_DIR / f"{scenario_id}_metrics.json"
         if metrics_path.exists():
             with open(metrics_path, 'r') as f:
                 metrics = json.load(f)
-    except (json.JSONDecodeError, IOError):
-        pass
+    except (json.JSONDecodeError, IOError) as e:
+        print(f"Could not load metrics for {scenario_id}: {e}")
     
     return risk_grid, hotspots, metrics
 

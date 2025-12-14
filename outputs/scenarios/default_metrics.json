@@ -1,0 +1,13 @@
+{
+  "scenario_id": "default",
+  "scenario_name": "Normal Operations",
+  "target_datetime": "2025-01-15 14:00",
+  "total_incidents_evaluated": 1581,
+  "expected_incident_range": [
+    15,
+    25
+  ],
+  "difficulty": "normal",
+  "cell_count": 754,
+  "hotspot_count": 10
+}
