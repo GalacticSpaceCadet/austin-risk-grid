@@ -52,6 +52,8 @@ export function resetPlacements() {
     placements: [],
     aiPlacements: [],
     showingAI: false,
+    aiAmbulanceLocations: [],
+    aiPredictionLoading: false,
   });
 }
 

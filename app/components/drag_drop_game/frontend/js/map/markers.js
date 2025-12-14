@@ -135,24 +135,51 @@ export function placeOrMoveMarker(unitId, lat, lon, options = {}) {
 
 export function placeAIMarker(unitId, lat, lon) {
   const map = getMap();
-  if (!map) return;
-
-  // Remove existing AI marker if present
-  const existing = aiMarkers.get(unitId);
-  if (existing) {
-    existing.remove();
-    aiMarkers.delete(unitId);
+  if (!map) {
+    console.warn(`Cannot place AI marker ${unitId}: map not available`);
+    return;
   }
 
+  // Ensure coordinates are numbers
+  const latNum = Number(lat);
+  const lonNum = Number(lon);
+  
+  if (isNaN(latNum) || isNaN(lonNum)) {
+    console.warn(`Invalid coordinates for AI marker ${unitId}: lat=${lat}, lon=${lon}`);
+    return;
+  }
+
+  // Check if marker already exists - update it instead of recreating
+  // This preserves the marker's position during zoom/pan operations
+  const existing = aiMarkers.get(unitId);
+  if (existing) {
+    // Update existing marker position - this maintains the marker's state
+    console.log(`Updating existing AI marker ${unitId} to (${latNum}, ${lonNum})`);
+    existing.setLngLat([lonNum, latNum]);
+    return;
+  }
+
+  // Create new marker
+  console.log(`Creating new AI marker ${unitId} at (${latNum}, ${lonNum})`);
   const el = document.createElement("div");
   el.className = "mapAmbulanceMarker ai-marker";
   el.innerHTML = aiAmbulanceSVG() + `<span class="markerBadge">AI</span>`;
 
-  const m = new maplibregl.Marker({ element: el, anchor: "center" })
-    .setLngLat([lon, lat])
-    .addTo(map);
+  // Create marker with proper anchor and add to map
+  // Using the same pattern as user markers to ensure consistency
+  try {
+    const m = new maplibregl.Marker({ 
+      element: el, 
+      anchor: "center" 
+    })
+      .setLngLat([lonNum, latNum])
+      .addTo(map);
 
-  aiMarkers.set(unitId, m);
+    aiMarkers.set(unitId, m);
+    console.log(`AI marker ${unitId} successfully added to map. Total AI markers: ${aiMarkers.size}`);
+  } catch (error) {
+    console.error(`Error placing AI marker ${unitId}:`, error);
+  }
 }
 
 export function removeMarker(unitId) {

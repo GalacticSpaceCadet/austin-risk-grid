@@ -13,6 +13,9 @@ const _state = {
   viewingMode: 'human', // 'human' | 'ai' - which placements are currently visible
   // Scenario data cache from backend
   allScenarioData: {}, // { scenarioId: { risk_grid, hotspots, metrics } }
+  // AI ambulance locations from LLM prediction
+  aiAmbulanceLocations: [], // [{lat: float, lon: float}] from backend
+  aiPredictionLoading: false, // Loading state for prediction
 };
 
 // Subscribers for reactive updates

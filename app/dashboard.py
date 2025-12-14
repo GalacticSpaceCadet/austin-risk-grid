@@ -4,13 +4,24 @@ Now with scenario-specific data loading.
 """
 
 import json
+import logging
 import random
 from datetime import datetime, timezone
 from pathlib import Path
 
 import streamlit as st
+import pandas as pd
 
 from components.drag_drop_game import drag_drop_game
+from src.run_llm_prediction_api import run_llm_prediction
+from src.scenarios import get_scenario
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 
 SCENARIOS_DIR = Path("outputs/scenarios")
@@ -220,6 +231,10 @@ def main():
     if "scenario_data" not in st.session_state:
         # Pre-load all scenario data
         st.session_state.scenario_data = load_all_scenario_data()
+    if "ai_ambulance_locations" not in st.session_state:
+        st.session_state.ai_ambulance_locations = []
+    if "last_compare_event" not in st.session_state:
+        st.session_state.last_compare_event = None
     
     # Get current scenario's data
     scenario_id = st.session_state.current_scenario
@@ -370,6 +385,7 @@ def main():
         mode=st.session_state.mode,
         scenario_id=scenario_id,
         all_scenario_data=scenario_data,  # Pass all data for client-side switching
+        ai_ambulance_locations=st.session_state.ai_ambulance_locations,
         key="drag_drop_game_v1",
     )
 
@@ -377,7 +393,9 @@ def main():
     if isinstance(event, dict) and event:
         if event.get("mode") in {"Human", "AI"}:
             st.session_state.mode = event["mode"]
-        if isinstance(event.get("placements"), list):
+        # Only update placements if the event explicitly includes them
+        # This preserves user placements when processing "compare" events
+        if "placements" in event and isinstance(event.get("placements"), list):
             st.session_state.placements = event["placements"]
         
         # Handle scenario change event
@@ -387,7 +405,57 @@ def main():
                 st.session_state.current_scenario = new_scenario
                 # Reset placements when scenario changes
                 st.session_state.placements = []
+                st.session_state.ai_ambulance_locations = []
+                st.session_state.last_compare_event = None  # Reset to allow new prediction
                 st.rerun()
+        
+        # Handle reset event
+        if event.get("type") == "reset":
+            st.session_state.last_compare_event = None  # Reset to allow new prediction
+        
+        # Handle "compare" event - run LLM prediction
+        if event.get("type") == "compare":
+            scenario_id_from_event = event.get("scenario", scenario_id)
+            ambulance_count = event.get("ambulanceCount", 4)
+            
+            # Create a unique key for this compare event to prevent duplicate processing
+            event_key = f"{scenario_id_from_event}_{ambulance_count}"
+            
+            # Check if we've already processed this exact event
+            if st.session_state.last_compare_event == event_key:
+                logger.debug(f"Skipping duplicate 'compare' event: {event_key}")
+            else:
+                logger.info(f"Received 'compare' event: scenario={scenario_id_from_event}, ambulance_count={ambulance_count}")
+                
+                # Mark this event as processed
+                st.session_state.last_compare_event = event_key
+                
+                # Get scenario's target_datetime
+                scenario = get_scenario(scenario_id_from_event)
+                target_datetime = scenario.get_target_datetime()
+                logger.debug(f"Using scenario target_datetime: {target_datetime}")
+                
+                # Run LLM prediction
+                try:
+                    with st.spinner(f"Running AI prediction for {ambulance_count} ambulances..."):
+                        logger.info(f"Starting LLM prediction for scenario '{scenario_id_from_event}' with {ambulance_count} ambulances")
+                        result = run_llm_prediction(
+                            start_time=target_datetime,
+                            num_ambulances=ambulance_count,
+                            coverage_radius=5.0,
+                            decay_function="linear"
+                        )
+                        st.session_state.ai_ambulance_locations = result["optimal_ambulance_locations"]
+                        logger.info(f"LLM prediction successful: {len(result['optimal_ambulance_locations'])} locations returned")
+                        # Rerun to pass new locations to component
+                        # The last_compare_event check will prevent reprocessing
+                        st.rerun()
+                except Exception as e:
+                    logger.error(f"LLM prediction failed: {str(e)}", exc_info=True)
+                    st.error(f"Failed to run AI prediction: {str(e)}")
+                    st.session_state.ai_ambulance_locations = []
+                    # Reset the event key so user can retry
+                    st.session_state.last_compare_event = None
 
 
 if __name__ == "__main__":

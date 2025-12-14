@@ -19,6 +19,7 @@ def drag_drop_game(
     mode: str = "Human",
     scenario_id: str = "default",
     all_scenario_data: Optional[dict[str, Any]] = None,
+    ai_ambulance_locations: Optional[list[dict[str, Any]]] = None,
     key: str = "drag_drop_game",
 ) -> dict[str, Any]:
     """
@@ -32,6 +33,7 @@ def drag_drop_game(
         mode: "Human" or "AI"
         scenario_id: Current scenario ID
         all_scenario_data: Dict of all scenario data for client-side switching
+        ai_ambulance_locations: Optional list of AI-optimized ambulance locations from LLM prediction
         key: Streamlit component key
 
     Returns the latest event payload emitted by the frontend.
@@ -55,6 +57,7 @@ def drag_drop_game(
         mode=mode,
         scenario_id=scenario_id,
         all_scenario_data=scenario_data_serialized,
+        ai_ambulance_locations=ai_ambulance_locations or [],
         key=key,
         default={},
     )
