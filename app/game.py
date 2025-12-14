@@ -26,6 +26,9 @@ from src.game.game_state import (
     BRIEFING, DEPLOY, COMMIT, REVEAL, DEBRIEF, GameState, PATROL, EMS
 )
 from src.game.scoring import compute_score, compare_with_baselines
+from src.game.pandemonium import generate_pandemonium_scenario, PandemoniumScenario
+from src.game.wave_engine import initialize_wave_state
+from src.game.llama_client import test_ollama_connection
 
 # Page configuration
 st.set_page_config(
@@ -56,6 +59,8 @@ if 'last_clicked_cell' not in st.session_state:
     st.session_state.last_clicked_cell = None
 if 'selected_unit_type' not in st.session_state:
     st.session_state.selected_unit_type = PATROL
+if 'pandemonium_enabled' not in st.session_state:
+    st.session_state.pandemonium_enabled = False
 
 
 def load_data():
@@ -89,6 +94,30 @@ def start_new_scenario(candidate_index: int = 0):
     st.session_state.score_breakdown = None
     st.session_state.baseline_comparison = None
     st.session_state.last_clicked_cell = None
+
+
+def start_pandemonium_scenario():
+    """Start a new Pandemonium AI scenario."""
+    load_data()
+
+    with st.spinner("⚡ Summoning chaos from the AI..."):
+        # Generate Pandemonium scenario
+        scenario = generate_pandemonium_scenario(
+            st.session_state.enriched_df,
+            st.session_state.facts_df
+        )
+        st.session_state.scenario = scenario
+
+        # Initialize wave state
+        wave_state = initialize_wave_state(scenario.pandemonium_data)
+
+        # Initialize game state with Pandemonium enabled
+        state = start_new_game(scenario, pandemonium_enabled=True, wave_state=wave_state)
+        st.session_state.game_state = state
+        st.session_state.score_breakdown = None
+        st.session_state.baseline_comparison = None
+        st.session_state.last_clicked_cell = None
+        st.session_state.pandemonium_enabled = True
 
 
 def cell_id_to_coords(cell_id: str) -> tuple:
@@ -323,6 +352,11 @@ def create_game_map_wrapper(scenario: Scenario, state: GameState, show_truth: bo
 def render_briefing_phase():
     """Render BRIEFING phase UI."""
     scenario = st.session_state.scenario
+    state = st.session_state.game_state
+
+    # Show Pandemonium mode indicator
+    if state.pandemonium_enabled:
+        st.warning("⚡ **PANDEMONIUM AI MODE** - AI-generated maximum chaos scenario")
 
     # HUD panel CSS
     st.markdown("""
@@ -479,6 +513,10 @@ def render_deploy_phase():
     """Render DEPLOY phase UI."""
     scenario = st.session_state.scenario
     state = st.session_state.game_state
+
+    # Show Pandemonium mode indicator
+    if state.pandemonium_enabled:
+        st.warning("⚡ **PANDEMONIUM AI MODE** - AI-generated maximum chaos scenario")
 
     # HUD panel CSS
     st.markdown("""
@@ -761,6 +799,10 @@ def render_reveal_phase():
     state = st.session_state.game_state
     score = st.session_state.score_breakdown
     comparison = st.session_state.baseline_comparison
+
+    # Show Pandemonium mode indicator
+    if state.pandemonium_enabled:
+        st.warning("⚡ **PANDEMONIUM AI MODE** - AI-generated maximum chaos scenario")
 
     # Reusable HUD panel CSS
     st.markdown("""
@@ -1066,8 +1108,12 @@ def render_reveal_phase():
     with btn_col1:
         if st.button("Next Round →", type="primary", use_container_width=True):
             st.session_state.round_number += 1
-            next_index = min(st.session_state.round_number - 1, len(st.session_state.candidates) - 1)
-            start_new_scenario(next_index)
+            # Check if Pandemonium mode is active
+            if st.session_state.pandemonium_enabled:
+                start_pandemonium_scenario()
+            else:
+                next_index = min(st.session_state.round_number - 1, len(st.session_state.candidates) - 1)
+                start_new_scenario(next_index)
             st.rerun()
 
     with btn_col2:
@@ -1146,8 +1192,12 @@ def render_debrief_phase():
         if st.button("Next Round ➡️", type="primary", use_container_width=True):
             # Start next scenario
             st.session_state.round_number += 1
-            next_index = min(st.session_state.round_number - 1, len(st.session_state.candidates) - 1)
-            start_new_scenario(next_index)
+            # Check if Pandemonium mode is active
+            if st.session_state.pandemonium_enabled:
+                start_pandemonium_scenario()
+            else:
+                next_index = min(st.session_state.round_number - 1, len(st.session_state.candidates) - 1)
+                start_new_scenario(next_index)
             st.rerun()
 
     with col2:
@@ -1163,27 +1213,64 @@ def main():
 
     # Sidebar
     with st.sidebar:
-        st.title("Game Controls")
-
         if st.session_state.game_state:
             scenario = st.session_state.scenario
 
-            # Show scenario context in sidebar
-            st.subheader(f"Round {st.session_state.round_number}")
-            st.write(f"**Phase:** {st.session_state.game_state.phase}")
+            # Pandemonium AI Section
+            with st.expander("⚡ Pandemonium AI", expanded=False):
+                if st.session_state.pandemonium_enabled:
+                    # Active state
+                    st.markdown("**STATUS:** ⚡ ACTIVE")
 
-            st.divider()
+                    # Show scenario name from AI
+                    if hasattr(scenario, 'pandemonium_data'):
+                        scenario_name = scenario.pandemonium_data.get("scenario_name", "Unknown Operation")
+                        st.write(f"**🎭 OPERATION:**")
+                        st.write(scenario_name)
 
-            # Temporal context always visible
-            date_str = scenario.t_bucket.strftime("%B %d, %Y")
-            time_str = scenario.t_bucket.strftime("%I:%M %p")
-            day_str = scenario.t_bucket.strftime("%A")
+                        # Show modifiers
+                        modifiers = scenario.pandemonium_data.get("global_modifiers", {})
+                        st.write("")
+                        st.write(f"**Time Compression:** {scenario.pandemonium_data.get('time_compression_factor', 4)}x")
+                        st.write(f"**Radio Congestion:** {modifiers.get('radio_congestion', 0)*100:.0f}%")
+                        st.write(f"**Dispatch Delay:** +{modifiers.get('dispatch_delay_seconds', 0)}s")
 
-            st.write("**📅 Scenario Context:**")
-            st.write(f"• Date: {date_str}")
-            st.write(f"• Day: {day_str}")
-            st.write(f"• Time: {time_str}")
-            st.write(f"• Location: Austin, TX")
+                    st.divider()
+
+                    # Abort button
+                    if st.button("❌ Abort Pandemonium", use_container_width=True):
+                        st.session_state.game_state = None
+                        st.session_state.scenario = None
+                        st.session_state.pandemonium_enabled = False
+                        st.session_state.round_number = 1
+                        st.rerun()
+
+                else:
+                    # Inactive state
+                    st.write("Unleash citywide chaos powered by local LLaMA.")
+                    st.write("")
+                    st.write("• AI-generated scenarios")
+                    st.write("• Dynamic incident waves")
+                    st.write("• Maximum difficulty")
+                    st.write("• Cascading failures")
+
+                    st.divider()
+
+                    # Check Ollama status
+                    is_running, message = test_ollama_connection()
+                    if is_running:
+                        st.success(f"✅ {message}")
+                    else:
+                        st.warning(f"⚠️ {message}")
+
+                    st.caption("ℹ️ Requires Ollama running locally")
+
+                    st.divider()
+
+                    # Launch button
+                    if st.button("🎮 Launch Pandemonium AI", type="primary", use_container_width=True):
+                        start_pandemonium_scenario()
+                        st.rerun()
 
             st.divider()
 
@@ -1191,6 +1278,7 @@ def main():
                 st.session_state.game_state = None
                 st.session_state.scenario = None
                 st.session_state.round_number = 1
+                st.session_state.pandemonium_enabled = False
                 st.rerun()
 
             st.divider()

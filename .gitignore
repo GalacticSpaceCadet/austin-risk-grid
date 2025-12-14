@@ -35,6 +35,10 @@ data/facts/*.parquet
 outputs/risk_grid_latest.json
 outputs/hotspots_latest.json
 
+# Pandemonium AI test outputs
+test_pandemonium_scenario.json
+nul
+
 # Streamlit
 .streamlit/
 
