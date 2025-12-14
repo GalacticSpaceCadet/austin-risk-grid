@@ -188,6 +188,11 @@ export function ensureMap() {
     map.resize();
   });
 
+  // Refresh heatmap on zoom to update radius (zoom-responsive scaling)
+  map.on("zoomend", () => {
+    refreshDeckLayers();
+  });
+
   return map;
 }
 
