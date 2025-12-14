@@ -32,7 +32,6 @@ def drag_drop_game(
         metrics=metrics or {},
         placements=placements or [],
         mode=mode,
-        height=height,
         key=key,
         default={},
     )

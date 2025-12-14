@@ -35,6 +35,7 @@
         height: 100%;
         width: 100%;
         margin: 0;
+        padding: 0;
         background: var(--bg);
         color: var(--text);
         font-family: var(--font);
@@ -43,19 +44,20 @@
 
       /* top-level shell */
       #app {
-        height: 100vh;
-        width: 100vw;
+        height: 100%;
+        width: 100%;
         box-sizing: border-box;
-        padding: 0; /* no top/bottom padding */
+        padding: 0;
+        margin: 0;
       }
 
       /* main 2-col layout */
       .grid {
         display: grid;
-        grid-template-columns: 2.2fr 1fr; /* more space to the map */
-        gap: 12px;
-        height: 100vh;
-        padding: 10px; /* internal spacing without causing page scroll */
+        grid-template-columns: 1fr 270px; /* fixed narrow panel, rest to map */
+        gap: 10px;
+        height: 100%;
+        padding: 10px;
         box-sizing: border-box;
       }
 
@@ -84,39 +86,12 @@
         inset: 0;
       }
 
-      /* overlay for drag & HUD – pointer-events enabled only during drag */
+      /* overlay for drag & HUD - pointer-events: none so markers receive clicks */
       .mapOverlay {
         position: absolute;
         inset: 0;
         z-index: 5;
         pointer-events: none;
-      }
-
-      .mapHud {
-        position: absolute;
-        top: 12px;
-        left: 12px;
-        right: 12px;
-        display: flex;
-        justify-content: space-between;
-        gap: 10px;
-        pointer-events: none;
-        z-index: 6;
-      }
-
-      .hudChip {
-        pointer-events: none;
-        padding: 10px 12px;
-        border-radius: 999px;
-        background: rgba(255, 255, 255, 0.80);
-        border: 1px solid rgba(15, 23, 42, 0.10);
-        color: rgba(15, 23, 42, 0.88);
-        font-size: 12px;
-        backdrop-filter: blur(8px);
-        max-width: 60%;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
       }
 
       .mapTitleWrap {
@@ -144,90 +119,238 @@
       }
 
       .ghost {
-        position: absolute;
-        width: 46px;
-        height: 46px;
-        transform: translate(-50%, -85%);
-        opacity: 0.95;
+        position: fixed;
+        width: 52px;
+        height: 52px;
+        pointer-events: none;
+        opacity: 0.92;
         display: none;
-        z-index: 7;
-        filter: drop-shadow(0 10px 12px rgba(0, 0, 0, 0.45));
+        z-index: 9999;
+        filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.35));
+        transition: transform 60ms ease-out;
       }
 
+      .ghost.over-map {
+        transform: scale(1.1);
+        filter: drop-shadow(0 12px 24px rgba(239, 68, 68, 0.4));
+      }
+
+      /* Story card - mission briefing style */
       .storyCard {
-        padding: 14px 14px 12px;
-        background: var(--panel-2);
+        padding: 0;
+        background: var(--panel);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
       }
 
-      .storyTop {
+      .storyHeader {
         display: flex;
         justify-content: space-between;
-        align-items: flex-start;
+        align-items: center;
+        padding: 10px 16px;
+        background: rgba(15, 23, 42, 0.03);
+        border-bottom: 1px solid var(--border);
         gap: 12px;
-        margin-bottom: 10px;
       }
 
       .storyTitle {
-        font-weight: 750;
-        font-size: 14px;
-        color: rgba(255,255,255,0.92);
+        font-weight: 800;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--text);
         margin: 0;
-      }
-
-      .storyMeta {
         display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-        justify-content: flex-end;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+      
+      .storyTitle .emoji {
+        font-size: 16px;
       }
 
-      .metaPill {
+      /* Scenario date/time display */
+      .scenarioDateTime {
+        display: flex;
+        align-items: center;
+        gap: 6px;
         font-size: 12px;
-        padding: 7px 10px;
-        border-radius: 999px;
-        border: 1px solid rgba(15, 23, 42, 0.10);
-        background: rgba(255, 255, 255, 0.85);
+        font-weight: 600;
         color: var(--muted);
+        padding: 5px 10px;
+        background: rgba(15, 23, 42, 0.04);
+        border-radius: 8px;
       }
+      
+      .scenarioDateTime.hidden {
+        display: none;
+      }
+      
+      .dateTimeIcon {
+        font-size: 14px;
+      }
+      
+      /* Header grade display (shown during results) */
+      .headerGrade {
+        display: none;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        font-weight: 900;
+        padding: 6px 16px;
+        border-radius: 10px;
+        background: rgba(34,197,94,0.12);
+        color: #16a34a;
+        min-width: 50px;
+      }
+      
+      .headerGrade.visible {
+        display: flex;
+      }
+      
+      .headerGrade.good { background: rgba(34,197,94,0.12); color: #16a34a; }
+      .headerGrade.okay { background: rgba(250,204,21,0.15); color: #ca8a04; }
+      .headerGrade.poor { background: rgba(239,68,68,0.12); color: #dc2626; }
 
       .storyBody {
-        display: grid;
-        grid-template-columns: 1.2fr 1fr;
-        gap: 12px;
-        align-items: start;
+        display: flex;
+        gap: 16px;
+        padding: 14px 16px;
+        align-items: flex-start;
+      }
+
+      .storyContent {
+        flex: 1;
+        min-width: 0;
       }
 
       .storyCopy {
         color: var(--muted);
         font-size: 13px;
-        line-height: 1.35;
+        line-height: 1.5;
+      }
+      
+      .storyHints {
+        margin-top: 10px;
+      }
+      
+      .storyHint {
+        font-size: 12px;
+        color: var(--muted2);
+        display: flex;
+        align-items: flex-start;
+        gap: 6px;
+        margin-top: 4px;
+      }
+      
+      .storyHint .hintIcon {
+        color: var(--accent);
+        flex-shrink: 0;
       }
 
-      .metrics {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-      }
-
-      .metricBox {
-        background: rgba(255, 255, 255, 0.78);
-        border: 1px solid rgba(15, 23, 42, 0.10);
+      /* Incident count - single prominent metric */
+      .incidentStat {
+        flex-shrink: 0;
+        text-align: center;
+        padding: 12px 20px;
+        background: rgba(15, 23, 42, 0.03);
+        border: 1px solid var(--border);
         border-radius: 12px;
-        padding: 10px 10px 9px;
+        min-width: 100px;
       }
 
-      .metricLabel {
-        font-size: 11px;
+      .incidentLabel {
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
         color: var(--muted2);
         margin-bottom: 4px;
       }
 
-      .metricValue {
+      .incidentValue {
+        font-size: 24px;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        color: var(--accent);
+      }
+      
+      /* Scoring feedback panel */
+      .scoringPanel {
+        display: none;
+        padding: 16px;
+        background: linear-gradient(135deg, rgba(240,253,244,0.95) 0%, rgba(220,252,231,0.9) 100%);
+        border-top: 1px solid rgba(34,197,94,0.2);
+        animation: slideUp 300ms ease-out;
+      }
+      
+      .scoringPanel.visible {
+        display: block;
+      }
+      
+      @keyframes slideUp {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      
+      .scoringHeader {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      
+      .scoringTitle {
+        font-weight: 800;
+        font-size: 14px;
+        color: var(--text);
+      }
+      
+      .scoringGrade {
+        font-size: 24px;
+        font-weight: 900;
+        padding: 4px 12px;
+        border-radius: 8px;
+        background: rgba(34,197,94,0.15);
+        color: #16a34a;
+      }
+      
+      .scoringGrade.good { background: rgba(34,197,94,0.15); color: #16a34a; }
+      .scoringGrade.okay { background: rgba(250,204,21,0.15); color: #ca8a04; }
+      .scoringGrade.poor { background: rgba(239,68,68,0.15); color: #dc2626; }
+      
+      .scoringMetrics {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+      
+      .scoringMetric {
+        text-align: center;
+        padding: 10px;
+        background: rgba(255,255,255,0.8);
+        border-radius: 10px;
+        border: 1px solid rgba(15,23,42,0.06);
+      }
+      
+      .scoringMetric .label {
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: var(--muted2);
+        margin-bottom: 4px;
+      }
+      
+      .scoringMetric .value {
         font-size: 18px;
         font-weight: 800;
-        letter-spacing: -0.02em;
-        color: rgba(255,255,255,0.92);
+        color: var(--text);
       }
+      
 
       .right {
         display: grid;
@@ -289,79 +412,208 @@
       .unit {
         background: rgba(255, 255, 255, 0.78);
         border: 1px solid rgba(15, 23, 42, 0.10);
-        border-radius: 14px;
-        padding: 10px;
+        border-radius: 12px;
+        padding: 8px;
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
         cursor: grab;
         user-select: none;
-        transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
-      }
-
-      .unit:active {
-        cursor: grabbing;
-        transform: scale(0.99);
+        touch-action: none; /* for pointer events */
+        transition: transform 120ms ease, border-color 120ms ease, background 120ms ease, box-shadow 120ms ease;
       }
 
       .unit:hover {
         border-color: rgba(15, 23, 42, 0.16);
         background: rgba(255, 255, 255, 0.92);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      }
+
+      .unit.dragging {
+        opacity: 0.4;
+        cursor: grabbing;
+      }
+
+      .unit.placed {
+        opacity: 0.5;
+        background: rgba(34, 197, 94, 0.1);
+        border-color: rgba(34, 197, 94, 0.3);
       }
 
       .unitBadge {
-        font-weight: 900;
-        font-size: 12px;
-        color: rgba(15, 23, 42, 0.88);
-        width: 44px;
-        height: 28px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 999px;
-        border: 1px solid rgba(15, 23, 42, 0.12);
-        background: rgba(255, 255, 255, 0.90);
+        font-weight: 800;
+        font-size: 11px;
+        color: rgba(15, 23, 42, 0.85);
       }
 
-      .unitState {
-        margin-left: auto;
-        font-size: 11px;
-        color: var(--muted2);
+      .ambulanceSvg {
+        width: 36px;
+        height: 36px;
+        flex: 0 0 auto;
       }
 
       .btn {
         width: 100%;
         padding: 12px 14px;
         border-radius: 14px;
-        border: 1px solid rgba(239, 68, 68, 0.25);
-        background: linear-gradient(180deg, rgba(239,68,68,0.92) 0%, rgba(239,68,68,0.82) 100%);
-        color: white;
-        font-weight: 900;
+        border: 1px solid rgba(134, 199, 172, 0.5);
+        background: linear-gradient(180deg, rgba(167,215,195,0.95) 0%, rgba(134,199,172,0.92) 100%);
+        color: rgba(30, 70, 50, 0.95);
+        font-weight: 800;
+        font-size: 14px;
         letter-spacing: -0.01em;
         cursor: pointer;
         user-select: none;
-        box-shadow: 0 14px 30px rgba(239, 68, 68, 0.18);
+        box-shadow: 0 8px 20px rgba(134, 199, 172, 0.25);
+        transition: all 150ms ease;
       }
 
-      .btn:hover {
-        filter: brightness(1.05);
+      .btn:hover:not(:disabled) {
+        filter: brightness(1.04);
+        transform: translateY(-1px);
+        box-shadow: 0 12px 28px rgba(134, 199, 172, 0.35);
+      }
+      
+      .btn:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+        background: linear-gradient(180deg, rgba(203,213,225,0.7) 0%, rgba(186,199,212,0.65) 100%);
+        border-color: rgba(186,199,212,0.4);
+        color: rgba(100,116,139,0.8);
+        box-shadow: none;
       }
 
       .btnSecondary {
         margin-top: 10px;
         background: rgba(255, 255, 255, 0.90);
         color: rgba(15, 23, 42, 0.88);
+        border-color: var(--border);
         box-shadow: none;
       }
-
-      /* ambulance svg icon */
-      .ambulanceSvg {
-        width: 44px;
-        height: 44px;
-        flex: 0 0 auto;
+      
+      .btnSecondary:hover:not(:disabled) {
+        background: rgba(255, 255, 255, 1);
+        transform: none;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
       }
 
-      /* map marker */
+      /* ambulance svg icon in ghost */
+      .ghost .ambulanceSvg {
+        width: 52px;
+        height: 52px;
+      }
+
+      /* map marker - ambulance icon */
+      .mapAmbulanceMarker {
+        position: relative;
+        width: 48px;
+        height: 48px;
+        filter: drop-shadow(0 6px 12px rgba(0,0,0,0.35));
+        cursor: grab;
+        user-select: none;
+        pointer-events: auto !important;
+        z-index: 10;
+        touch-action: none;
+        /* No transitions - markers must be rock solid during map interactions */
+      }
+      
+      .mapAmbulanceMarker:hover {
+        filter: drop-shadow(0 8px 16px rgba(0,0,0,0.45)) brightness(1.05);
+      }
+      
+      .mapAmbulanceMarker:active,
+      .mapAmbulanceMarker.dragging {
+        cursor: grabbing;
+        opacity: 0.35;
+      }
+      
+      /* Ensure marker wrapper has no transforms that could interfere */
+      .maplibregl-marker {
+        /* MapLibre handles positioning via transform - don't add any transitions */
+        will-change: transform;
+      }
+      
+      /* Only animate when explicitly requested via class */
+      .maplibregl-marker.animate-move {
+        transition: transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+      
+      /* Ensure SVG inside marker doesn't scale unexpectedly */
+      .mapAmbulanceMarker .ambulanceSvg {
+        width: 48px;
+        height: 48px;
+        display: block;
+        flex-shrink: 0;
+      }
+      
+      .mapAmbulanceMarker .ambulanceSvg {
+        width: 48px;
+        height: 48px;
+      }
+      
+      .mapAmbulanceMarker .markerBadge {
+        position: absolute;
+        top: -4px;
+        right: -4px;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: rgba(59, 130, 246, 0.95);
+        border: 2px solid white;
+        color: white;
+        font-size: 10px;
+        font-weight: 800;
+        display: grid;
+        place-items: center;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      }
+      
+      /* AI ambulance markers - purple/violet color scheme */
+      .mapAmbulanceMarker.ai-marker {
+        pointer-events: none;
+        cursor: default;
+      }
+      
+      .mapAmbulanceMarker.ai-marker .markerBadge {
+        background: rgba(139, 92, 246, 0.95);
+      }
+      
+      .mapAmbulanceMarker.ai-marker .ambulanceSvg rect[fill="url(#g)"] {
+        fill: rgba(139, 92, 246, 0.2);
+      }
+      
+      /* Ambulance popup tooltip */
+      .ambulance-popup {
+        z-index: 100 !important;
+        pointer-events: none;
+      }
+      
+      .ambulance-popup .maplibregl-popup-content {
+        background: rgba(15, 23, 42, 0.95);
+        color: white;
+        padding: 10px 14px;
+        border-radius: 10px;
+        font-size: 12px;
+        line-height: 1.5;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+        border: 1px solid rgba(255,255,255,0.15);
+        backdrop-filter: blur(8px);
+      }
+      
+      .ambulance-popup .maplibregl-popup-tip {
+        border-top-color: rgba(15, 23, 42, 0.95);
+      }
+      
+      .popup-content strong {
+        font-size: 13px;
+        color: rgba(147, 197, 253, 1);
+      }
+      
+      .popup-label {
+        color: rgba(148, 163, 184, 1);
+      }
+      
+      /* legacy marker style (for hotspots) */
       .marker {
         width: 34px;
         height: 34px;
@@ -378,16 +630,30 @@
       }
 
       /* keep things tight on smaller screens */
-      @media (max-width: 980px) {
+      @media (max-width: 800px) {
         .grid {
           grid-template-columns: 1fr;
-          height: 100vh;
+          grid-template-rows: 1fr auto;
+          height: 100%;
+        }
+        .left {
+          min-height: 400px;
         }
         .right {
-          grid-template-rows: 1fr auto;
+          grid-template-rows: auto auto;
+          padding-bottom: 10px;
+        }
+        .bay {
+          grid-template-columns: repeat(4, 1fr);
+        }
+        .storyHeader {
+          flex-wrap: wrap;
         }
         .storyBody {
-          grid-template-columns: 1fr;
+          flex-direction: column;
+        }
+        .incidentStat {
+          align-self: flex-start;
         }
       }
 
@@ -498,9 +764,9 @@
 
       /* ========== Marker Animations ========== */
       @keyframes marker-pulse {
-        0% { transform: scale(1); box-shadow: 0 12px 22px rgba(0,0,0,0.45); }
-        50% { transform: scale(1.15); box-shadow: 0 14px 28px rgba(255,59,48,0.4); }
-        100% { transform: scale(1); box-shadow: 0 12px 22px rgba(0,0,0,0.45); }
+        0% { transform: scale(1); filter: drop-shadow(0 6px 12px rgba(0,0,0,0.35)); }
+        50% { transform: scale(1.1); filter: drop-shadow(0 8px 16px rgba(59,130,246,0.4)); }
+        100% { transform: scale(1); filter: drop-shadow(0 6px 12px rgba(0,0,0,0.35)); }
       }
 
       @keyframes marker-ripple {
@@ -514,16 +780,16 @@
         }
       }
 
-      .marker.pulse {
+      .mapAmbulanceMarker.pulse {
         animation: marker-pulse 0.4s ease-out;
       }
 
       .marker-ripple {
         position: absolute;
-        width: 34px;
-        height: 34px;
+        width: 48px;
+        height: 48px;
         border-radius: 50%;
-        background: rgba(255, 59, 48, 0.4);
+        background: rgba(59, 130, 246, 0.4);
         pointer-events: none;
         animation: marker-ripple 0.6s ease-out forwards;
         top: 50%;
@@ -638,48 +904,56 @@
             <div class="mapTitleWrap">
               <div class="mapTitle">Austin</div>
             </div>
-            <div class="mapHud">
-              <div id="hudLeft" class="hudChip">Loading…</div>
-              <div id="hudRight" class="hudChip">Drag 4 units onto the map</div>
-            </div>
             <div id="overlay" class="mapOverlay"></div>
             <div id="ghost" class="ghost"></div>
           </div>
 
           <div class="card storyCard">
-            <div class="storyTop">
-              <div>
-                <div class="storyTitle">Situation brief</div>
-                <div class="storyCopy" id="storyCopy">
-                  You have four ambulances to stage for the next hour. Place them where risk is highest to respond fast.
-                </div>
+            <div class="storyHeader">
+              <div class="storyTitle" id="storyTitle">
+                <span class="emoji" id="storyEmoji">🚑</span>
+                <span id="storyTitleText">Mission Briefing</span>
               </div>
-              <div class="storyMeta">
-                <div id="metaHour" class="metaPill">Next hour: —</div>
-                <div id="metaCells" class="metaPill">Cells: —</div>
+              <div class="scenarioDateTime" id="scenarioDateTime">
+                <span class="dateTimeIcon">📅</span>
+                <span id="scenarioDateTimeText">—</span>
+              </div>
+              <div class="headerGrade" id="headerGrade">
+                <span id="headerGradeText">—</span>
               </div>
             </div>
 
-            <div class="storyBody">
-              <div class="storyCopy" id="storyMore">
-                Redder areas indicate higher predicted incident likelihood. Hotspots show top recommendations. Your goal: stage units to cover the risk.
+            <div class="storyBody" id="storyBody">
+              <div class="storyContent">
+                <div class="storyCopy" id="storyCopy">
+                  Position your four ambulances to maximize coverage of high-risk zones. Red areas indicate higher predicted incident probability for the next hour.
+                </div>
+                <div class="storyHints" id="storyHints">
+                  <div class="storyHint">
+                    <span class="hintIcon">💡</span>
+                    <span>Downtown and entertainment districts typically see higher call volumes.</span>
+                  </div>
+                </div>
               </div>
-              <div class="metrics" id="metricsGrid">
-                <div class="metricBox">
-                  <div class="metricLabel">Coverage (Top 10)</div>
-                  <div class="metricValue" id="mCoverage">—</div>
+              <div class="incidentStat">
+                <div class="incidentLabel">Predicted Incidents</div>
+                <div class="incidentValue" id="mIncidents">—</div>
+              </div>
+            </div>
+            
+            <div class="scoringPanel" id="scoringPanel">
+              <div class="scoringMetrics">
+                <div class="scoringMetric">
+                  <div class="label">Your Score</div>
+                  <div class="value" id="playerScore">—</div>
                 </div>
-                <div class="metricBox">
-                  <div class="metricLabel">Lift vs Random</div>
-                  <div class="metricValue" id="mLift">—</div>
+                <div class="scoringMetric">
+                  <div class="label">AI Score</div>
+                  <div class="value" id="aiScore">—</div>
                 </div>
-                <div class="metricBox">
-                  <div class="metricLabel">Window</div>
-                  <div class="metricValue" id="mWindow">—</div>
-                </div>
-                <div class="metricBox">
-                  <div class="metricLabel">Incidents</div>
-                  <div class="metricValue" id="mIncidents">—</div>
+                <div class="scoringMetric">
+                  <div class="label">Coverage</div>
+                  <div class="value" id="coverageScore">—</div>
                 </div>
               </div>
             </div>
@@ -688,22 +962,40 @@
 
         <div class="right">
           <div class="card panelCard">
-            <div class="label">Mode</div>
+            <div class="label">Scenario</div>
             <div class="selectWrap">
-              <select id="mode" class="select">
-                <option value="Human">Human</option>
-                <option value="AI">AI</option>
+              <select id="scenarioSelect" class="select">
+                <option value="default">Normal Operations</option>
+                <option value="sxsw">SXSW 2025</option>
+                <option value="acl">ACL Festival</option>
+                <option value="f1">F1 US Grand Prix</option>
+                <option value="july4">Fourth of July</option>
+                <option value="halloween">Halloween Weekend</option>
+                <option value="nye">New Year's Eve</option>
+                <option value="ut_game">UT Football Game</option>
+              </select>
+            </div>
+
+            <div style="height: 10px"></div>
+            <div class="label">Ambulances</div>
+            <div class="selectWrap">
+              <select id="ambulanceCount" class="select">
+                <option value="2">2 units</option>
+                <option value="3">3 units</option>
+                <option value="4" selected>4 units</option>
+                <option value="5">5 units</option>
+                <option value="6">6 units</option>
               </select>
             </div>
 
             <div style="height: 12px"></div>
-            <div class="label">Ambulance bay (drag onto map)</div>
+            <div class="label">Your placements (drag onto map)</div>
             <div id="bay" class="bay"></div>
           </div>
 
           <div>
-            <button id="deploy" class="btn">Deploy units</button>
-            <button id="reset" class="btn btnSecondary">Reset placements</button>
+            <button id="deploy" class="btn" disabled>Compare with AI</button>
+            <button id="reset" class="btn btnSecondary">Reset</button>
           </div>
         </div>
       </div>
