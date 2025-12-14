@@ -4,3 +4,5 @@ requests>=2.31
 streamlit>=1.20
 pydeck>=0.8
 shapely>=2.0
+scipy>=1.10
+vllm>=0.6.0
