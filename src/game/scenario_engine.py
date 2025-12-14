@@ -36,6 +36,7 @@ class RecentIncident:
     cell_id: str
     neighborhood: Optional[str]
     age_hours: int
+    issue_reported: Optional[str] = None
 
 
 @dataclass
@@ -62,6 +63,7 @@ class NextHourIncident:
     cell_id: str
     neighborhood: Optional[str]
     address: Optional[str]
+    issue_reported: Optional[str] = None
 
 
 @dataclass
@@ -219,12 +221,18 @@ def build_visible_data(
         if pd.isna(neighborhood):
             neighborhood = None
 
+        # Extract issue_reported if present
+        issue_reported = row.get('issue_reported')
+        if pd.isna(issue_reported):
+            issue_reported = None
+
         incident = RecentIncident(
             lat=float(row['latitude']),
             lon=float(row['longitude']),
             cell_id=str(row['cell_id']),
             neighborhood=neighborhood,
-            age_hours=age_hours
+            age_hours=age_hours,
+            issue_reported=issue_reported
         )
         recent_incidents.append(incident)
 
@@ -275,12 +283,18 @@ def build_truth_data(
         if pd.isna(address):
             address = None
 
+        # Extract issue_reported if present
+        issue_reported = row.get('issue_reported')
+        if pd.isna(issue_reported):
+            issue_reported = None
+
         incident = NextHourIncident(
             lat=float(row['latitude']),
             lon=float(row['longitude']),
             cell_id=str(row['cell_id']),
             neighborhood=neighborhood,
-            address=address
+            address=address,
+            issue_reported=issue_reported
         )
         next_hour_incidents.append(incident)
 
@@ -331,19 +345,98 @@ def generate_scenario_text(
     period = "AM" if t_bucket.hour < 12 else "PM"
     title = f"{day_name} {hour_12} {period}"
 
-    # Generate briefing text
-    date_str = t_bucket.strftime("%Y-%m-%d %H:%M")
-    briefing_text = (
-        f"Time: {date_str}. "
-        f"Recent activity from last {visible.lookback_hours} hours is visible. "
-        f"You have {units.patrol_count} patrol units and {units.ems_count} EMS units available. "
-        f"Resources are constrained."
-    )
+    # Generate tactical-style briefing
+    briefing_text = _generate_tactical_briefing(t_bucket, visible, units)
 
     # Fixed objective text
     objective_text = "Maximize coverage. Minimize missed incidents."
 
     return title, briefing_text, objective_text
+
+
+def _generate_tactical_briefing(
+    t_bucket: pd.Timestamp,
+    visible: Visible,
+    units: Units
+) -> str:
+    """
+    Generate tactical-style mission briefing.
+
+    Style: Calm, confident, directive. Operations commander tone.
+    Format: 3-4 sentences, human language, no jargon or statistics.
+
+    Args:
+        t_bucket: Scenario timestamp
+        visible: Visible data
+        units: Available units
+
+    Returns:
+        Tactical briefing text (3-4 sentences)
+    """
+    # Time/place establishment
+    hour_12 = t_bucket.hour % 12
+    if hour_12 == 0:
+        hour_12 = 12
+    period = "AM" if t_bucket.hour < 12 else "PM"
+    time_str = f"{hour_12}:00 {period}"
+
+    # Analyze incident patterns
+    incidents = visible.recent_incidents
+    total_units = units.patrol_count + units.ems_count
+
+    # Count unique neighborhoods
+    neighborhoods = set()
+    for inc in incidents:
+        if inc.neighborhood:
+            neighborhoods.add(inc.neighborhood)
+
+    # Count unique cells (spatial concentration)
+    cells = set()
+    for inc in incidents:
+        cells.add(inc.cell_id)
+
+    # Determine pattern type
+    if len(incidents) == 0:
+        pattern = "quiet"
+    elif len(neighborhoods) <= 2:
+        pattern = "concentrated"
+    elif len(cells) < len(incidents) * 0.6:
+        pattern = "clustered"
+    else:
+        pattern = "scattered"
+
+    # Generate briefing based on pattern
+    if pattern == "quiet":
+        briefing = (
+            f"It's {time_str} in Austin, and the city's running unusually quiet right now. "
+            f"The last few hours show minimal activity across all sectors, which could mean you're in a calm window or it's building somewhere we haven't seen yet. "
+            f"You've got units to deploy, but spreading thin on a hunch leaves you vulnerable if something breaks. "
+            f"Cover the main corridors and stay ready to adapt."
+        )
+    elif pattern == "concentrated":
+        area_desc = f"{list(neighborhoods)[0]}" if len(neighborhoods) == 1 else "a couple of key areas"
+        briefing = (
+            f"It's {time_str} in Austin, and activity is concentrating in {area_desc} instead of spreading across the grid. "
+            f"The last few hours show pressure building in one sector, which means you can focus your resources or risk being overcommitted if another zone heats up. "
+            f"You've got enough units to lock down the hot zone, but that leaves the rest of the city exposed. "
+            f"Deploy where the risk is highest, or hedge your bets and hope the pattern holds."
+        )
+    elif pattern == "clustered":
+        briefing = (
+            f"It's {time_str} in Austin, and activity is clustering in several zones rather than staying centralized. "
+            f"The last few hours show multiple pressure points developing, which means you're looking at corridor coverage instead of locking down a single area. "
+            f"You've got limited units and they won't reach everywhere—commit to the main arteries or risk leaving neighborhoods unprotected. "
+            f"Deploy with intention, not hope."
+        )
+    else:  # scattered
+        briefing = (
+            f"It's {time_str} in Austin, and activity is spreading across multiple sectors rather than concentrating in one area. "
+            f"The last few hours show incidents scattered through downtown corridors and outlying zones, which means you're looking at coverage gaps instead of a single pressure point. "
+            f"You've got limited units to position, and they won't reach everywhere—commit to protecting the main arteries or risk leaving entire neighborhoods exposed. "
+            f"Deploy with intention, not hope."
+        )
+
+    return briefing
 
 
 def compute_baselines(
