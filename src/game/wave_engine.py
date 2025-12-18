@@ -51,6 +51,48 @@ def initialize_wave_state(pandemonium_data: Dict) -> WaveState:
     )
 
 
+def generate_all_incidents(pandemonium_data: Dict) -> List[NextHourIncident]:
+    """
+    Pre-generate all incidents from all waves for static gameplay.
+
+    This generates ALL incidents that would spawn across all waves,
+    including cascades, assuming worst-case (nothing covered).
+    Used for traditional deploy->reveal->score flow.
+
+    Args:
+        pandemonium_data: LLM-generated scenario JSON with waves
+
+    Returns:
+        List of all NextHourIncident objects across all waves
+    """
+    all_incidents = []
+    all_cascades = []
+
+    # Empty set = nothing covered (worst case for cascades)
+    covered_cells = set()
+
+    waves = pandemonium_data.get("waves", [])
+
+    # Process each wave
+    for wave in waves:
+        incidents, cascades = spawn_wave_incidents(wave, covered_cells)
+        all_incidents.extend(incidents)
+        all_cascades.extend(cascades)
+
+    # Process all cascades (convert cascade definitions to incidents)
+    for cascade in all_cascades:
+        cascade_incidents = spawn_cluster_incidents(
+            cell_id=cascade["origin_cell_id"],
+            incident_type=cascade["incident_type"],
+            severity=3,  # Default severity
+            count=cascade["count"],
+            spread_radius=cascade.get("spread_radius", 0)
+        )
+        all_incidents.extend(cascade_incidents)
+
+    return all_incidents
+
+
 def update_wave_state(
     wave_state: WaveState,
     elapsed_seconds: int,

@@ -648,10 +648,13 @@ def _build_pandemonium_scenario_wrapper(
     # Show 6 hours of activity instead of 3 to display MORE incidents
     visible = build_visible_data(enriched_df, t_bucket, lookback_hours=6)
 
-    # Create Truth from first wave (incidents that will appear)
-    # We'll populate this dynamically during gameplay via wave_engine
+    # Create Truth by pre-generating all wave incidents
+    # Generate all incidents upfront for traditional deploy->reveal->score flow
+    from src.game.wave_engine import generate_all_incidents
+    all_incidents = generate_all_incidents(pandemonium_data)
+
     truth = Truth(
-        next_hour_incidents=[],  # Populated by wave_engine
+        next_hour_incidents=all_incidents,  # All waves pre-generated
         heat_grid=[]  # No heat grid in Pandemonium mode
     )
 

@@ -1,7 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Bash(./venv/Scripts/python.exe:*)"
+      "Bash(./venv/Scripts/python.exe:*)",
+      "Bash(git worktree:*)",
+      "Bash(git fetch:*)",
+      "Bash(git push:*)",
+      "Bash(git branch:*)",
+      "Bash(find:*)",
+      "Bash(taskkill:*)"
     ]
   }
 }

@@ -1256,12 +1256,13 @@ def main():
 
                     st.divider()
 
-                    # Check Ollama status
-                    is_running, message = test_ollama_connection()
-                    if is_running:
-                        st.success(f"✅ {message}")
-                    else:
-                        st.warning(f"⚠️ {message}")
+                    # Check Ollama status (only when button is clicked to avoid 5s timeout on every rerun)
+                    if st.button("🔍 Check Ollama Status", use_container_width=True):
+                        is_running, message = test_ollama_connection()
+                        if is_running:
+                            st.success(f"✅ {message}")
+                        else:
+                            st.warning(f"⚠️ {message}")
 
                     st.caption("ℹ️ Requires Ollama running locally")
 
